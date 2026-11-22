@@ -1,0 +1,195 @@
+/* Configuración — bloques organizados por dominio */
+
+.config-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.config-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem 1.35rem 1.1rem;
+}
+
+.config-block__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.config-block__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.config-block__desc {
+  margin: 0.25rem 0 0;
+  max-width: 42rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.config-block__badge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brand-soft-ink);
+  background: var(--brand-soft);
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+}
+
+.config-block--danger {
+  border-color: color-mix(in srgb, var(--negative) 35%, var(--border));
+  background: color-mix(in srgb, var(--pill-negative-bg) 28%, var(--surface));
+}
+
+.config-block--danger .config-block__badge {
+  color: var(--pill-negative-ink);
+  background: var(--pill-negative-bg);
+}
+
+.config-hint-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+@media (max-width: 767.98px) {
+  .config-hint-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.config-hint {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  padding: 0.75rem 0.9rem;
+}
+
+.config-hint__label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 0.2rem;
+}
+
+.config-hint__value {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.config-hint__note {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 2;
+  margin-top: 0.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+}
+
+.config-actions__note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.config-check {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+}
+
+.config-logo-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.config-afp-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: auto;
+}
+
+.config-afp-table {
+  --bs-table-bg: transparent;
+  margin: 0;
+  min-width: 640px;
+}
+
+.config-afp-table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--raised);
+  border-bottom-color: var(--border);
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.config-afp-table__hint {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--faint);
+  letter-spacing: 0.02em;
+}
+
+.config-afp-table tbody th,
+.config-afp-table tbody td {
+  vertical-align: middle;
+  border-color: var(--rule);
+}
+
+.config-afp-name {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.config-afp-total {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--brand);
+}

@@ -1,0 +1,15 @@
+{
+  "name": "calculadora-de-nomina-planillas",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Monorepo: API REST Express + frontend Next.js para planillas y nómina",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:frontend": "npm --prefix frontend run start",
+    "test": "npm --prefix backend test",
+    "audit:all": "npm --prefix backend run audit:prod && npm --prefix frontend run audit:prod"
+  }
+}

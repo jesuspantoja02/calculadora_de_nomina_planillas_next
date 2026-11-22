@@ -1,0 +1,124 @@
+.confirm-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.confirm-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--brand-deep) 52%, transparent);
+  backdrop-filter: blur(4px);
+  animation: confirm-fade 0.2s ease both;
+}
+
+.confirm-dialog__card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  padding: 1.35rem 1.35rem 1.2rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  box-shadow: var(--shadow-lg);
+  animation: confirm-rise 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.confirm-dialog__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 0.9rem;
+  border-radius: 12px;
+}
+
+.confirm-dialog__card--danger .confirm-dialog__icon {
+  color: var(--negative);
+  background: var(--pill-negative-bg);
+}
+
+.confirm-dialog__card--warning .confirm-dialog__icon {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 18%, var(--raised));
+}
+
+.confirm-dialog__title {
+  margin: 0 0 0.45rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.confirm-dialog__message {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.confirm-dialog__detail {
+  margin: 0.65rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--faint);
+  background: var(--raised);
+  border: 1px solid var(--rule);
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+}
+
+.confirm-dialog__confirm.btn-danger {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--negative);
+  --bs-btn-border-color: var(--negative);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: color-mix(in srgb, var(--negative) 88%, #000);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--negative) 88%, #000);
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: color-mix(in srgb, var(--negative) 80%, #000);
+  --bs-btn-active-border-color: color-mix(in srgb, var(--negative) 80%, #000);
+}
+
+@keyframes confirm-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes confirm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-dialog__backdrop,
+  .confirm-dialog__card {
+    animation: none;
+  }
+}

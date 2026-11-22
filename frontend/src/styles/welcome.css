@@ -1,0 +1,263 @@
+.company-logo {
+  display: block;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
+.company-logo--monogram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--brand-ink);
+  background: linear-gradient(145deg, var(--surface) 0%, var(--ground) 100%);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.welcome-panel {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  background-color: var(--ground);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  animation: welcome-panel-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.welcome-panel__overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, color-mix(in srgb, var(--brand-deep) 72%, transparent) 0%, color-mix(in srgb, var(--brand-deep) 28%, transparent) 48%, transparent 78%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 8%, transparent) 0%, color-mix(in srgb, var(--ground) 55%, transparent) 100%);
+}
+
+html[data-theme='dark'] .welcome-panel__overlay {
+  background:
+    linear-gradient(180deg, rgba(6, 14, 28, 0.62) 0%, rgba(6, 14, 28, 0.78) 48%, rgba(4, 10, 22, 0.92) 100%),
+    linear-gradient(105deg, rgba(8, 40, 48, 0.7) 0%, transparent 58%);
+}
+
+html[data-theme='dark'] .welcome-panel {
+  background-color: #07141c;
+}
+
+.welcome-panel__content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  padding: 48px clamp(24px, 5vw, 64px) 56px;
+  max-width: 980px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.welcome-panel__eyebrow {
+  margin: 0 0 18px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #fff 78%, var(--brand-secondary));
+}
+
+.welcome-panel__logo-wrap {
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.welcome-panel__logo {
+  display: block;
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.welcome-panel__nombre {
+  margin: 28px 0 0;
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: #fff;
+  text-transform: none;
+  text-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.welcome-panel__eslogan {
+  margin: 14px 0 0;
+  max-width: 34em;
+  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  font-weight: 500;
+  line-height: 1.5;
+  color: rgba(240, 248, 255, 0.9);
+  letter-spacing: -0.01em;
+}
+
+.welcome-panel__intents {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(100%, 640px);
+  margin-top: 36px;
+}
+
+.welcome-intent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 14px 14px 12px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid color-mix(in srgb, #fff 35%, var(--border));
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  animation: welcome-intent-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.welcome-intent--0 { animation-delay: 0.18s; }
+.welcome-intent--1 { animation-delay: 0.26s; }
+.welcome-intent--2 { animation-delay: 0.34s; }
+.welcome-intent--3 { animation-delay: 0.42s; }
+
+.welcome-intent:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--brand-secondary) 45%, var(--border));
+}
+
+.welcome-intent__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  color: var(--brand-secondary);
+  background: var(--brand-soft);
+}
+
+.welcome-intent__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.welcome-intent__title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.welcome-intent__detail {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.welcome-panel__loading {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+}
+
+.brand--home {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 4px 6px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+
+.brand--home:hover {
+  background: var(--ground);
+}
+
+.brand--home:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@keyframes welcome-panel-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes welcome-intent-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-panel,
+  .welcome-intent {
+    animation: none;
+  }
+}
+
+.main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.main--cartilla {
+  padding: 0;
+  min-height: 0;
+}
+
+@media (max-width: 639.98px) {
+  .welcome-panel__intents {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .welcome-panel {
+    min-height: calc(100vh - 0px);
+  }
+
+  .welcome-panel__content {
+    padding: 76px 20px 40px;
+    justify-content: flex-start;
+  }
+}

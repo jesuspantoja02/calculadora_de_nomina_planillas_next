@@ -1,0 +1,134 @@
+# =============================================================================
+# Nómina / planillas — lo que NO se versiona
+# =============================================================================
+
+# --- Dependencias ---
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# --- Compilados y artefactos de build ---
+dist/
+build/
+out/
+out-tsc/
+.angular/
+.vite/
+.next/
+.turbo/
+.vercel/
+*.tsbuildinfo
+
+# --- Secretos y entorno local (sí se suben los *.example) ---
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
+secrets/
+credentials*.json
+
+# --- SQLite en runtime (DNI, boletas, tasas). La carpeta queda con .gitkeep ---
+backend/data/*
+!backend/data/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*-journal
+
+# --- Logs, caché y cobertura ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm/
+.eslintcache
+.stylelintcache
+.cache/
+.parcel-cache/
+.rpt2_cache/
+.rts2_cache_*/
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# --- Sistema operativo ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# --- Editores e IDE ---
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.swp
+*.swo
+*~
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# --- Herramientas locales del agente / diseño (no son del producto del curso) ---
+.cursor/
+.agents/
+.grok/
+.impeccable/
+.taste-skill/
+skills-lock.json
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.venv/
+venv/
+
+# --- Temporales y exportaciones locales ---
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+exports/
+*.export.json
+*.xlsx
+*.xls
+!docs/**/*.xlsx
+uploads/
+tmp/
+temp/
+
+# --- Material de curso / exposición (local; no versionar) ---
+Guia_Exposicion_Unidad_2.md
+Guia_Exposicion_Unidad_3.md
+Java_Script_Avanzado_Semanas_11_al_14.md
+Presentacion_Unidad_2.md
+Presentacion_Unidad_3.md
+PRODUCT.md
+S16_s1_semana_16_JSA.md
+S17_s1_semana_17_JSA.md
+*.pptx
+*.ppt
