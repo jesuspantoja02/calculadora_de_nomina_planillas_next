@@ -1,3 +1,8 @@
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 html,
 body,
 #root {
@@ -331,7 +336,8 @@ select:focus-visible {
 
 @media (max-width: 991.98px) {
   .main {
-    padding: 76px 16px 32px;
+    padding: calc(76px + var(--safe-top)) calc(16px + var(--safe-right)) calc(32px + var(--safe-bottom))
+      calc(16px + var(--safe-left));
   }
 
   .sidebar {
@@ -355,8 +361,8 @@ select:focus-visible {
   .menu-btn {
     display: flex;
     position: fixed;
-    top: 16px;
-    left: 16px;
+    top: calc(16px + var(--safe-top));
+    left: calc(16px + var(--safe-left));
     z-index: 40;
     width: 42px;
     height: 42px;

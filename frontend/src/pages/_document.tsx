@@ -4,6 +4,10 @@ export default function Document() {
   return (
     <Html lang="es" data-scroll-behavior="smooth">
       <Head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
         <meta name="description" content="Planillas y nómina — Perú" />
         {/* Favicon = logo del sistema (Planilla Nómina), no el ícono genérico de Next */}
         <link rel="icon" href="/favicon.ico" sizes="any" />

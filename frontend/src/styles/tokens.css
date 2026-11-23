@@ -66,6 +66,11 @@ html[data-theme='light'] {
   --pad: 28px;
   --gap: 14px;
 
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
   --focus-ring: 0 0 0 3px rgba(26, 138, 120, 0.28);
 
   --theme-switch-x: 50%;

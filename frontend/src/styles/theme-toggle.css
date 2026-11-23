@@ -146,8 +146,8 @@
 
 .login-page__theme {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: calc(20px + var(--safe-top));
+  right: calc(20px + var(--safe-right));
   z-index: 20;
 }
 

@@ -257,7 +257,8 @@ html[data-theme='dark'] .welcome-panel {
   }
 
   .welcome-panel__content {
-    padding: 76px 20px 40px;
+    padding: calc(76px + var(--safe-top)) calc(20px + var(--safe-right)) calc(40px + var(--safe-bottom))
+      calc(20px + var(--safe-left));
     justify-content: flex-start;
   }
 }
