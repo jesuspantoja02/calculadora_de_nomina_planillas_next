@@ -1,0 +1,51 @@
+# Blueprint Render — monorepo nómina (API + Next.js)
+# Uso: Dashboard → Blueprints → New Blueprint → conecta este repo.
+# Tras el primer deploy:
+# 1. En nomina-web → Environment: NEXT_PUBLIC_API_URL = https://<tu-api>.onrender.com/api/v1
+# 2. En nomina-api → Environment: CORS_ORIGINS = http://localhost:3001,https://<tu-web>.onrender.com
+# 3. Redeploy nomina-web (el build embebe NEXT_PUBLIC_API_URL).
+
+services:
+  - type: web
+    name: nomina-api
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.18.0
+      - key: DATABASE_FILE
+        value: data/nomina.db
+      - key: CORS_ORIGINS
+        value: http://localhost:3001
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: AUTH_TOKEN_TTL_HOURS
+        value: "12"
+      - key: RATE_LIMIT_MAX
+        value: "300"
+
+  - type: web
+    name: nomina-web
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:render
+    healthCheckPath: /login
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.18.0
+      - key: NEXT_PUBLIC_API_URL
+        sync: false

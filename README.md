@@ -288,7 +288,7 @@ conservando el mismo flujo de pantallas, **arquitectura hexagonal** en backend y
 | Backend | Arquitectura hexagonal (Express 5, SQLite) + módulo **`auth`** (JWT, usuarios, roles) |
 | Frontend | React 19, Vite 8, React Router 7, TypeScript 6, Bootstrap 5.3, **Geist Sans / Geist Mono** (`@fontsource`) |
 | Pruebas | `node:test` (backend) y Vitest (frontend, validadores de entrada) |
-| Nota | Despliegue y cliente actual: ver **Unidad 3 final** (Next.js + Render) |
+| Nota | Despliegue y cliente actual: ver **Unidad 3 final** (Next.js + API en **Render**) |
 
 ### Flujo de usuario (continuidad con las unidades anteriores)
 
@@ -453,7 +453,7 @@ examen final.
 | Backend | Express 5 + SQLite + auth JWT + módulo **`asistente`** (LLM vía API externa) |
 | Frontend | **Next.js 16** (React 19), Bootstrap 5.3, Geist, ExcelJS, jsPDF |
 | Puertos locales | API `:3000` · App Next `:3001` (rewrite `/api/*` → backend) |
-| Despliegue | [`docs/DESPLIEGUE-RENDER.md`](docs/DESPLIEGUE-RENDER.md) (API + Next en Render) |
+| Despliegue | [`docs/DESPLIEGUE-RENDER.md`](docs/DESPLIEGUE-RENDER.md) (API y Next en **Render**; opcional [`render.yaml`](render.yaml)) |
 
 ### Qué aporta respecto a la Unidad 3
 
@@ -474,6 +474,7 @@ examen final.
 
 ```
 calculadora_de_nomina_planillas_next/
+├── render.yaml                      Blueprint Render (nomina-api + nomina-web)
 ├── backend/                         API REST hexagonal
 │   └── src/modules/
 │       ├── auth/                    JWT, usuarios, roles, foto de perfil
@@ -559,7 +560,7 @@ cd backend  && npm run build && npm start
 cd frontend && npm run build && npm start     # Next en :3001
 ```
 
-Despliegue paso a paso: [`docs/DESPLIEGUE-RENDER.md`](docs/DESPLIEGUE-RENDER.md).
+Despliegue paso a paso (API y Next en Render): [`docs/DESPLIEGUE-RENDER.md`](docs/DESPLIEGUE-RENDER.md).
 
 **Pruebas y auditoría**
 
@@ -586,4 +587,4 @@ Ver [`.gitignore`](.gitignore): `node_modules/`, `.next/`, `dist/`, `.env` (sí 
 
 ### Próximos pasos sugeridos para escalar
 
-Multiempresa, migración a PostgreSQL (nuevos adaptadores), OpenAPI, ampliar Postman con login/asistente, CI con `npm audit` y pruebas, y contenedores u otros hosts (Render ya documentado en `docs/`).
+Multiempresa, migración a PostgreSQL (nuevos adaptadores), OpenAPI, ampliar Postman con login/asistente, CI con `npm audit` y pruebas, y otros hosts (despliegue en Render documentado en `docs/`).

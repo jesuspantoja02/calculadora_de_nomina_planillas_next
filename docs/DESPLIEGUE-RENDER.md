@@ -1,11 +1,27 @@
-# Despliegue en Render (plan Free) — Nómina Unidad 3 final
+# Despliegue en la nube (Render) — Nómina Unidad 3 final
 
-Guía paso a paso para publicar el monorepo **actual** ([Unidad 3 final](../README.md#-unidad-3-final--nextjs-exports-asistente-y-cierre-de-producto) en el README) en [Render](https://render.com) con el **plan gratuito**:
+Guía paso a paso para publicar el monorepo **actual** ([Unidad 3 final](../README.md#-unidad-3-final--nextjs-exports-asistente-y-cierre-de-producto) en el README):
 
-- **Web Service** → API Node.js (`backend/`)
-- **Web Service** → App **Next.js 16** (`frontend/`, Pages Router)
+| Pieza | Dónde |
+|--------|--------|
+| **API** Express + SQLite (`backend/`) | [Render](https://render.com) — Web Service Node (plan Free) |
+| **Next.js 16** (`frontend/`, Pages Router) | [Render](https://render.com) — Web Service Node (plan Free) |
 
-Replica en la nube lo que haces en local con `npm run dev:backend` (`:3000`) y `npm run dev:frontend` (`:3001`): **dos URLs públicas**, **CORS** en la API, **`NEXT_PUBLIC_API_URL`** en el build de Next y, opcionalmente, **`AI_*`** en el backend para el asistente.
+Replica en la nube lo que haces en local con `npm run dev:backend` (`:3000`) y `npm run dev:frontend` (`:3001`): **dos URLs públicas en Render**, **CORS** en la API, **`NEXT_PUBLIC_API_URL`** en el **build** del frontend y **`AI_*`** en el backend para el **asistente IA** (módulo completo de Unidad 3).
+
+Esta guía cubre **todo el alcance del producto en producción**: autenticación JWT, roles, empleados, planilla, boletas, dashboard, configuración, usuarios con foto, exports CSV/Excel/PDF y chat del asistente vía API externa (Groq por defecto).
+
+### Orden de despliegue recomendado
+
+| Paso | Dónde | Qué haces |
+|------|--------|-----------|
+| 1 | GitHub | Push de `main` (sin `.env` ni `*.db`) |
+| 2 | Render | Web Service `backend/`, variables, **Live** |
+| 3 | Navegador | `GET …/api/v1/health` y `POST …/auth/login` |
+| 4 | Render | Opcional: `AI_API_KEY` + redeploy; opcional: `npm run seed` en Shell |
+| 5 | Render | Segundo Web Service `frontend/`, `NEXT_PUBLIC_API_URL` → deploy |
+| 6 | Render | Actualizar `CORS_ORIGINS` en la API con la URL del frontend |
+| 7 | Render | Checklist sección [14](#14-prueba-final-de-la-aplicación) y [21](#21-funcionalidades-del-proyecto-en-producción) |
 
 ---
 
@@ -13,40 +29,44 @@ Replica en la nube lo que haces en local con `npm run dev:backend` (`:3000`) y `
 
 1. [Qué vas a obtener](#1-qué-vas-a-obtener)
 2. [Requisitos previos](#2-requisitos-previos)
-3. [Limitaciones del plan Free (léelas antes)](#3-limitaciones-del-plan-free-léelas-antes)
-4. [Arquitectura en Render](#4-arquitectura-en-render)
+3. [Limitaciones del plan gratuito (léelas antes)](#3-limitaciones-del-plan-gratuito-léelas-antes)
+4. [Arquitectura](#4-arquitectura)
 5. [Preparar el código](#5-preparar-el-código)
 6. [Subir el proyecto a GitHub](#6-subir-el-proyecto-a-github)
 7. [Crear cuenta y conectar GitHub en Render](#7-crear-cuenta-y-conectar-github-en-render)
-8. [Desplegar la API (Web Service)](#8-desplegar-la-api-web-service)
+8. [Desplegar la API en Render](#8-desplegar-la-api-en-render)
 9. [Comprobar que la API funciona](#9-comprobar-que-la-api-funciona)
 10. [Probar la API en JSON (login y token)](#10-probar-la-api-en-json-login-y-token)
 11. [Datos de demostración (opcional)](#11-datos-de-demostración-opcional)
-12. [Desplegar el frontend Next.js (Web Service)](#12-desplegar-el-frontend-nextjs-web-service)
+12. [Desplegar el frontend en Render](#12-desplegar-el-frontend-en-render)
 13. [Ajustar CORS con la URL final del frontend](#13-ajustar-cors-con-la-url-final-del-frontend)
 14. [Prueba final de la aplicación](#14-prueba-final-de-la-aplicación)
 15. [Variables de entorno (referencia)](#15-variables-de-entorno-referencia)
 16. [Solución de problemas](#16-solución-de-problemas)
 17. [Mantenimiento y redespliegues](#17-mantenimiento-y-redespliegues)
 18. [Asistente IA en producción](#18-asistente-ia-en-producción)
+19. [Otras plataformas](#19-otras-plataformas)
+20. [Mapa de la API y autenticación](#20-mapa-de-la-api-y-autenticación)
+21. [Funcionalidades del proyecto en producción](#21-funcionalidades-del-proyecto-en-producción)
+22. [Seguridad y buenas prácticas](#22-seguridad-y-buenas-prácticas)
 
 ---
 
 ## 1. Qué vas a obtener
 
-| Servicio en Render | Carpeta del repo | URL ejemplo |
-|--------------------|------------------|-------------|
-| Web Service (API) | `backend/` | `https://nomina-api-xxxx.onrender.com` |
-| Web Service (Next) | `frontend/` | `https://nomina-web-xxxx.onrender.com` |
+| Servicio | Carpeta | URL ejemplo |
+|----------|---------|-------------|
+| API (Render) | `backend/` | `https://nomina-api-xxxx.onrender.com` |
+| Frontend (Render) | `frontend/` | `https://nomina-web-xxxx.onrender.com` |
 
-El navegador carga Next desde su Web Service. Las peticiones van a la API (`https://nomina-api-xxxx.onrender.com/api/v1/...`). Casi todos los endpoints requieren **JWT** tras `POST /auth/login`. El chat del asistente usa `POST /api/v1/asistente/chat` (misma API, clave `AI_API_KEY` solo en el servidor).
+El navegador carga Next desde Render. Las peticiones van a la API (`https://nomina-api-xxxx.onrender.com/api/v1/...`). Casi todos los endpoints requieren **JWT** tras `POST /auth/login`. El chat del asistente usa `POST /api/v1/asistente/chat` (clave `AI_API_KEY` solo en el servidor).
 
 ---
 
 ## 2. Requisitos previos
 
 - Cuenta en **GitHub** con el repositorio actualizado (rama `main` con `backend/` y `frontend/`).
-- Cuenta en **Render** (registro con GitHub es lo más cómodo).
+- Cuenta en **Render** (registro con GitHub es lo más cómodo; plan Free disponible; crearás **dos** Web Services en el mismo workspace).
 - En tu PC (para probar antes de subir):
   - **Node.js ≥ 22.18** (igual que `backend/package.json` → `engines.node`).
   - Haber ejecutado al menos una vez:
@@ -69,16 +89,18 @@ Eso ya está cubierto por el `.gitignore` del repositorio.
 
 ---
 
-## 3. Limitaciones del plan Free (léelas antes)
+## 3. Limitaciones del plan gratuito (léelas antes)
 
 | Tema | Comportamiento |
 |------|----------------|
-| **Inactividad** | Cada Web Service se **apaga** tras ~15 minutos sin tráfico. La primera visita después puede tardar **30–90 segundos** (cold start). |
-| **SQLite** | La base `data/nomina.db` vive en el **disco del contenedor**. En el plan Free, al **redesplegar** o en algunos reinicios **puedes perder los datos**. Usa datos de prueba, `npm run seed` o vuelve a cargar desde la UI. |
-| **Dos dominios** | Frontend y API no comparten origen; configura **CORS** en el backend y **`NEXT_PUBLIC_API_URL`** en el build de Next. |
-| **HTTPS** | Render provee HTTPS; usa `https://` en CORS y en `NEXT_PUBLIC_API_URL`. |
+| **Spin down (Render Free)** | Si un Web Service free pasa **~15 minutos sin tráfico**, Render lo **apaga**. La primera petición puede tardar **~1 minuto** (pantalla de carga de Render). **API y frontend** pueden dormirse por separado; tras inactividad, conviene recargar el front y esperar al despertar de la API si hace falta. |
+| **Cuota Render Free** | **750 horas-instancia/mes** por workspace; si se agotan, Render **suspende** los servicios free hasta el mes siguiente (mensaje tipo *“free instance usage limit for this month”*). Revisa [límites del plan free](https://render.com/docs/free). |
+| **Dos Web Services free** | Este proyecto usa **dos** servicios (API + Next). Ambos **comparten** la cuota horaria del workspace free. |
+| **SQLite** | `data/nomina.db` vive en el **disco efímero** del servicio. Tras **redeploy**, **reinicio** o **spin down** **puedes perder datos**. Usa altas desde la UI, o datos de prueba locales; el admin inicial se recrea al arrancar (`seed-usuarios.ts`). |
+| **Dos dominios** | Frontend y API no comparten origen; configura **CORS** en la API y **`NEXT_PUBLIC_API_URL`** en el build de Next. |
+| **HTTPS** | Render provee HTTPS en ambos servicios; usa `https://` en CORS y en `NEXT_PUBLIC_API_URL`. |
 | **Autenticación** | La API exige `Authorization: Bearer <token>` en rutas protegidas. El token lo devuelve el login; la app lo guarda en `sessionStorage`. |
-| **Asistente IA** | Sin `AI_API_KEY` en el backend el FAB abre pero el chat falla al enviar. La clave **nunca** va en el frontend. |
+| **Asistente IA** | Sin `AI_API_KEY` el FAB abre pero el chat falla al enviar. La clave **nunca** va en el frontend. |
 | **Fotos / logo** | Perfil y logo van en JSON como data URL; el límite del cuerpo es **1 MB** (`express.json` en `backend/src/app.ts`). |
 | **Configuración** | `PUT /configuracion` y reinicio de datos exigen rol gestor (`admin` / `jefe` / `gerente`). |
 
@@ -86,26 +108,26 @@ Para un proyecto de curso y demo, estas limitaciones suelen ser aceptables.
 
 ---
 
-## 4. Arquitectura en Render
+## 4. Arquitectura
 
 ```text
 Usuario
    │
    ▼
 ┌─────────────────────────────────────┐
-│  Web Service (Next.js)               │  https://nomina-web-xxxx.onrender.com
+│  Render (Next.js 16)                 │  https://nomina-web-xxxx.onrender.com
 │  React 19 + Pages Router             │
 └─────────────────────────────────────┘
    │  fetch → https://nomina-api-xxxx.onrender.com/api/v1/...
-   │  (Bearer token tras login)
+   │  (Bearer token tras login; CORS en la API)
    ▼
 ┌─────────────────────────────────────┐
-│  Web Service (Node + Express 5)      │  https://nomina-api-xxxx.onrender.com
+│  Render (Express 5 + Node)           │  https://nomina-api-xxxx.onrender.com
 │  SQLite: backend/data/nomina.db      │
 └─────────────────────────────────────┘
 ```
 
-En **desarrollo local**, Next reescribe `/api` hacia el puerto 3000 (`frontend/next.config.ts`) y `apiUrl` es `/api/v1` (`frontend/src/config/environment.ts`). En **Render no hay ese rewrite hacia localhost**: el build de Next debe recibir la URL absoluta de la API con **`NEXT_PUBLIC_API_URL`**.
+En **desarrollo local**, Next reescribe `/api` hacia el puerto 3000 (`frontend/next.config.ts`) y `apiUrl` es `/api/v1` (`frontend/src/config/environment.ts`). En **producción (Render) no hay rewrite hacia localhost**: el build de Next debe recibir la URL absoluta de la API con **`NEXT_PUBLIC_API_URL`**. Si olvidas esa variable, el cliente usará `/api/v1` y los rewrites del repo apuntan a `localhost:3000` — **la app fallará** en login y datos.
 
 ---
 
@@ -119,7 +141,7 @@ apiUrl: process.env.NEXT_PUBLIC_API_URL ?? '/api/v1',
 ```
 
 - **Local:** no hace falta `NEXT_PUBLIC_API_URL` (rewrite de Next hacia Express).
-- **Render:** defines `NEXT_PUBLIC_API_URL` en el dashboard del servicio Next (sección 12), **no** en un `.env` commiteado con secretos.
+- **Render (frontend):** defines `NEXT_PUBLIC_API_URL` en el dashboard del Web Service (sección 12), **no** en un `.env` commiteado con secretos.
 
 ### 5.1 Verificar el build en local
 
@@ -131,7 +153,7 @@ npm run build
 
 Salida esperada de Next: carpeta `frontend/.next/`.
 
-Opcional: probar el build apuntando a tu API de Render:
+Opcional: probar el build apuntando a tu API en Render:
 
 ```bash
 # PowerShell
@@ -139,6 +161,17 @@ $env:NEXT_PUBLIC_API_URL="https://TU-API.onrender.com/api/v1"
 npm run build
 npm run start
 ```
+
+### 5.2 Verificar el build del backend en local
+
+```bash
+cd backend
+npm install
+npm run build
+npm start
+```
+
+Abre `http://localhost:3000/api/v1/health` (o el `PORT` de tu `.env`).
 
 ---
 
@@ -152,82 +185,108 @@ npm run start
    git push -u origin main
    ```
 
-Render leerá `backend/` y `frontend/` desde la rama conectada (normalmente `main`).
+En Render crearás **dos Web Services** del mismo repositorio: uno con **Root Directory** `backend/` y otro con `frontend/`.
 
 ---
 
 ## 7. Crear cuenta y conectar GitHub en Render
 
+> **Atajo:** si prefieres no crear los dos servicios a mano, usa el [`render.yaml`](../render.yaml) del repositorio (Blueprint; ver [Resumen rápido](#resumen-rápido-checklist)). El resto de esta guía detalla el dashboard paso a paso.
+
 1. Entra en [https://dashboard.render.com](https://dashboard.render.com).
-2. Regístrate o inicia sesión (botón **Get Started** / **Sign In**).
+2. Regístrate o inicia sesión (recomendado: **Sign in with GitHub**).
 3. Conecta tu cuenta de **GitHub** cuando Render lo pida.
-4. Autoriza a Render para acceder al repositorio de este proyecto (puedes limitar solo a ese repo).
+4. Autoriza a Render para acceder al repositorio de este monorepo (puedes limitar solo a ese repo).
 
 ---
 
-## 8. Desplegar la API (Web Service)
+## 8. Desplegar la API en Render
 
-### 8.1 Crear el servicio
+### 8.1 Crear el Web Service
 
 1. En el dashboard: **New +** → **Web Service**.
-2. Selecciona tu repositorio.
-3. Rama: **`main`**.
-
-### 8.2 Configuración del formulario
+2. Selecciona el repositorio del proyecto (rama **`main`**).
+3. Configuración sugerida:
 
 | Campo | Valor |
 |--------|--------|
 | **Name** | `nomina-api` (define el subdominio `.onrender.com`) |
-| **Region** | Cercano a Perú: **Oregon (US West)** |
-| **Branch** | `main` |
+| **Region** | La más cercana (p. ej. Oregon / Ohio) |
 | **Root Directory** | `backend` |
-| **Runtime** | **Node** |
+| **Runtime** | Node |
 | **Build Command** | `npm install && npm run build` |
 | **Start Command** | `npm start` |
 | **Instance Type** | **Free** |
+| **Auto-Deploy** | **Yes** (redeploy al push en `main`) |
 
-### 8.3 Variables de entorno (primera pasada)
+**No definas `PORT` en variables:** Render la inyecta automáticamente; la API la lee en `backend/src/shared/config/env.ts`.
 
-En **Environment** → **Add Environment Variable**:
+En **Settings → Build & Deploy**, si Render permite fijar versión de Node, usa **22.18** o superior (alineado con `engines` en `backend/package.json`). Si no aparece en la UI, añade variable de entorno `NODE_VERSION` = `22.18.0` (según soporte actual del runtime).
 
-| Key | Value (ejemplo) | Notas |
-|-----|-----------------|--------|
-| `NODE_ENV` | `production` | Logs de acceso en la API |
-| `NODE_VERSION` | `22.18.0` | Alineado con `engines` del backend |
-| `CORS_ORIGINS` | `http://localhost:3001` | **Temporal**; actualiza en la sección 13 |
-| `DATABASE_FILE` | `data/nomina.db` | Ruta relativa dentro de `backend/` |
-| `AUTH_SECRET` | *(string aleatorio ≥ 16 caracteres)* | **Obligatorio en producción**; no uses el valor de desarrollo |
+### 8.2 Variables de entorno (dashboard → Environment)
+
+No commitees secretos. Añádelos en **Environment** del servicio:
+
+| Key | Valor ejemplo | Notas |
+|-----|---------------|--------|
+| `NODE_ENV` | `production` | Activa rate limit y logs de acceso |
+| `DATABASE_FILE` | `data/nomina.db` | Ruta dentro del servicio |
+| `AUTH_SECRET` | *(generado)* | **Obligatorio** |
+| `CORS_ORIGINS` | `http://localhost:3001` | Actualiza tras desplegar el front (sección 13) |
 | `AUTH_TOKEN_TTL_HOURS` | `12` | Opcional |
-| `RATE_LIMIT_MAX` | `300` | Opcional en producción (`1000` solo tiene sentido en local) |
-| `AI_API_KEY` | *(vacío o clave Groq/OpenAI-compatible)* | **Opcional**; obligatoria para que responda el asistente |
-| `AI_BASE_URL` | `https://api.groq.com/openai/v1` | Solo si usas otro proveedor compatible |
-| `AI_MODEL` | `openai/gpt-oss-20b` | Modelo del proveedor (ej. Groq) |
+| `RATE_LIMIT_MAX` | `300` | Opcional |
 
-**No definas `PORT`:** Render la inyecta; la API la lee en `backend/src/shared/config/env.ts`.
+Generar `AUTH_SECRET` en local:
 
-Al arrancar, si no existe el usuario admin inicial, se crea uno (usuario y clave en `backend/src/modules/auth/infrastructure/seed-usuarios.ts`). **Cambia la contraseña** desde la app tras el primer login en producción y rota `AUTH_SECRET` respecto al valor de desarrollo.
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
 
-### 8.4 Health check (recomendado)
+**Asistente IA (recomendado para demo completa):**
 
-**Health Check Path:**
+| Key | Valor típico | Notas |
+|-----|--------------|--------|
+| `AI_API_KEY` | `gsk_…` | [Groq Console](https://console.groq.com); sin comillas en Render |
+| `AI_BASE_URL` | `https://api.groq.com/openai/v1` | Omitir si usas Groq |
+| `AI_MODEL` | `openai/gpt-oss-20b` | ID según catálogo del proveedor |
+
+Sin `AI_API_KEY`, la API arranca igual; el chat devuelve error `IA_NO_CONFIGURADA` (ver sección [18](#18-asistente-ia-en-producción)).
+
+Al arrancar, si no existe el usuario admin inicial, se crea uno (**credenciales en** `backend/src/modules/auth/infrastructure/seed-usuarios.ts`). **Obligatorio en producción:** inicia sesión, entra a tu perfil y **cambia la contraseña** (`POST /auth/cambiar-password` o UI); no dejes la clave inicial en un entorno público.
+
+### 8.3 Desplegar
+
+Pulsa **Create Web Service**. Render instala dependencias, ejecuta `tsc` (`dist/`) y arranca `node dist/main.js`. Espera estado **Live**.
+
+### 8.4 Health check (opcional)
+
+En **Settings → Health Check Path** puedes usar:
 
 ```text
 /api/v1/health
 ```
 
-### 8.5 Crear el servicio
+Logs: pestaña **Logs** del servicio en el dashboard.
 
-**Create Web Service**. Render compila TypeScript (`dist/`) y arranca `node dist/main.js`. Espera estado **Live**.
+### 8.5 Copiar la URL de la API
 
-### 8.6 Copiar la URL de la API
-
-Ejemplo:
+En la cabecera del servicio, copia la URL pública. Ejemplo:
 
 ```text
 https://nomina-api-xxxx.onrender.com
 ```
 
-La necesitas para `NEXT_PUBLIC_API_URL` y para CORS.
+La necesitas para `NEXT_PUBLIC_API_URL` y para actualizar `CORS_ORIGINS`.
+
+### 8.6 Primer acceso y roles
+
+| Rol | Capacidades en producción |
+|-----|----------------------------|
+| `admin` | Todo; listar/editar/eliminar usuarios; configuración |
+| `jefe` / `gerente` | Planilla, configuración, alta de usuarios (roles limitados) |
+| `usuario` | Operación diaria; sin configuración ni listado global de usuarios |
+
+El menú de **Configuración** y rutas `PUT /configuracion`, `DELETE /datos` y gestión de usuarios exigen permisos de gestor/admin según `backend/src/app.ts` y los routers de cada módulo.
 
 ---
 
@@ -236,7 +295,7 @@ La necesitas para `NEXT_PUBLIC_API_URL` y para CORS.
 Abre en el navegador (no requiere token):
 
 ```text
-https://TU-SERVICIO-API.onrender.com/api/v1/health
+https://TU-API.onrender.com/api/v1/health
 ```
 
 Respuesta esperada:
@@ -250,7 +309,7 @@ Respuesta esperada:
 }
 ```
 
-Si falla: revisa **Logs**, **Root Directory** = `backend`, **Start Command** = `npm start`.
+Si falla: revisa **Logs** en Render, confirma `AUTH_SECRET` y el resto de variables, y espera el arranque si el servicio estaba en spin down.
 
 ---
 
@@ -261,7 +320,7 @@ La API **no** muestra empleados en la raíz del dominio. Para ver JSON:
 1. **Login** (público):
 
    ```http
-   POST https://TU-SERVICIO-API.onrender.com/api/v1/auth/login
+   POST https://TU-API.onrender.com/api/v1/auth/login
    Content-Type: application/json
 
    {"usuario":"tu_usuario","password":"tu_clave"}
@@ -272,14 +331,14 @@ La API **no** muestra empleados en la raíz del dominio. Para ver JSON:
 2. **Listar empleados** (protegido):
 
    ```http
-   GET https://TU-SERVICIO-API.onrender.com/api/v1/empleados
+   GET https://TU-API.onrender.com/api/v1/empleados
    Authorization: Bearer <data.token>
    ```
 
 **PowerShell:**
 
 ```powershell
-$base = "https://TU-SERVICIO-API.onrender.com/api/v1"
+$base = "https://TU-API.onrender.com/api/v1"
 $login = Invoke-RestMethod -Method Post -Uri "$base/auth/login" `
   -ContentType "application/json" -Body '{"usuario":"TU_USUARIO","password":"TU_CLAVE"}'
 Invoke-RestMethod -Uri "$base/empleados" -Headers @{ Authorization = "Bearer $($login.data.token)" }
@@ -293,90 +352,127 @@ CORS no aplica a curl/Postman/PowerShell; solo al navegador.
 
 ## 11. Datos de demostración (opcional)
 
-`backend/scripts/seed.ts` crea empleados de ejemplo.
+`backend/scripts/seed.ts` inserta empleados y datos de ejemplo en SQLite (idempotente en la medida que no duplique lógica conflictiva).
 
-En el Web Service → **Shell** (si está disponible):
+### 11.1 Desde la UI (recomendado en producción)
+
+Con el front en Render y sesión iniciada: **Empleados → Alta**, luego **Procesar pago** / **Boletas** según el flujo del curso.
+
+### 11.2 Desde Render Shell
+
+1. Web Service **nomina-api** → pestaña **Shell** (disponible en plan Free cuando el servicio está Live).
+2. El **Root Directory** ya es `backend/`; ejecuta:
+
+   ```bash
+   npm run seed
+   ```
+
+   Usa las mismas variables de entorno del servicio (`DATABASE_FILE`, etc.).
+
+3. Si falla por Node/TS, verifica versión Node 22 en el servicio y que el script exista en el repo desplegado.
+
+### 11.3 En local
 
 ```bash
+cd backend
 npm run seed
 ```
 
-También puedes dar de alta datos desde la UI una vez desplegado el frontend.
+Solo afecta tu `data/nomina.db` local; **no** sincroniza con Render.
 
-Tras un redeploy, la base SQLite puede quedar vacía otra vez.
+Tras un **redeploy** o pérdida del disco efímero en Render, la base SQLite puede quedar **vacía** otra vez (salvo admin recreado al arrancar). Repite seed, Shell o altas manuales.
 
 ---
 
-## 12. Desplegar el frontend Next.js (Web Service)
+## 12. Desplegar el frontend en Render
 
-Next.js no se publica como Static Site en este repo (usa servidor Node con `next start`).
+Necesitas la URL de la API del paso [8.5](#85-copiar-la-url-de-la-api).
 
-### 12.1 Variable de entorno del build
+### 12.1 Crear el segundo Web Service
 
-Necesitas la URL de la API del paso 8.6. En el Web Service de Next, **antes o al crear**:
-
-| Key | Value |
-|-----|--------|
-| `NEXT_PUBLIC_API_URL` | `https://nomina-api-xxxx.onrender.com/api/v1` |
-
-Sin barra final después de `v1`. Debe incluir el prefijo `/api/v1`.
-
-### 12.2 Crear el Web Service
-
-1. **New +** → **Web Service**.
-2. Mismo repositorio y rama **`main`**.
+1. En el dashboard de Render: **New +** → **Web Service**.
+2. Selecciona el **mismo** repositorio y rama **`main`** que la API.
+3. Configuración sugerida:
 
 | Campo | Valor |
 |--------|--------|
-| **Name** | `nomina-web` |
-| **Branch** | `main` |
+| **Name** | `nomina-web` (subdominio `.onrender.com`) |
+| **Region** | La misma que la API (menor latencia entre servicios) |
 | **Root Directory** | `frontend` |
-| **Runtime** | **Node** |
+| **Runtime** | Node |
 | **Build Command** | `npm install && npm run build` |
-| **Start Command** | `npx next start -p $PORT` |
+| **Start Command** | `npm run start:render` |
 | **Instance Type** | **Free** |
+| **Auto-Deploy** | **Yes** |
 
-El script local `npm run start` fija el puerto `3001`; en Render usa **`$PORT`** como arriba (no `npm start` sin adaptar).
+**Importante:** Render inyecta `PORT` en runtime. El script `npm start` del repo fija el puerto **3001** (útil en local); en Render usa **`npm run start:render`** (`frontend/package.json`), que escucha en `0.0.0.0` y el puerto `$PORT`.
 
-Define también `NODE_VERSION` = `22.18.0` (o compatible) y `NEXT_PUBLIC_API_URL` como en 12.1. El build ejecuta `next build --webpack` (ver `frontend/package.json`).
+Añade variable `NODE_VERSION` = `22.18.0` (o la versión de Node que uses en local) si el runtime no la ofrece en Settings.
 
-### 12.3 Desplegar
+### 12.2 Variables de entorno
 
-**Create Web Service**. URL pública ejemplo:
+En **Environment** del servicio **nomina-web**:
+
+| Key | Value |
+|-----|--------|
+| `NODE_ENV` | `production` |
+| `NEXT_PUBLIC_API_URL` | `https://TU-API.onrender.com/api/v1` |
+
+Sin barra final después de `v1`. Se embebe en el bundle en el **build**; si cambia la URL del API, **vuelve a desplegar el frontend** (Manual Deploy o push a `main`).
+
+### 12.3 Desplegar y copiar la URL
+
+Pulsa **Create Web Service**. Espera estado **Live**. URL ejemplo:
 
 ```text
 https://nomina-web-xxxx.onrender.com
 ```
+
+Cada push a `main` puede redeplegar API y frontend si ambos tienen Auto-Deploy activo.
+
+### 12.4 Health check (opcional)
+
+En **Settings → Health Check Path** puedes usar:
+
+```text
+/login
+```
+
+### 12.5 Desarrollo local contra API en Render
+
+Puedes dejar `NEXT_PUBLIC_API_URL` vacía en local y usar rewrites, o apuntar a Render en una terminal de prueba:
+
+```bash
+# Bash
+NEXT_PUBLIC_API_URL=https://TU-API.onrender.com/api/v1 npm run dev
+```
+
+En la API, añade `http://localhost:3001` a `CORS_ORIGINS` en Render (ya debería estar). Así pruebas el front local contra API en la nube (útil para depurar IA sin redesplegar el frontend).
 
 ---
 
 ## 13. Ajustar CORS con la URL final del frontend
 
-La API solo acepta orígenes en `CORS_ORIGINS` (`backend/src/app.ts`, `env.ts`).
+La API solo acepta orígenes en `CORS_ORIGINS` (`backend/src/app.ts`, `env.ts`). El valor debe coincidir **exactamente** con el origen del navegador (esquema + host + puerto si aplica, **sin** barra final ni path).
 
-1. Web Service **nomina-api** → **Environment**.
-2. Edita `CORS_ORIGINS` (sin barra final):
-
-```text
-https://nomina-web-xxxx.onrender.com
-```
-
-3. Para seguir probando en local:
+En Render → servicio **nomina-api** → **Environment**, edita `CORS_ORIGINS`:
 
 ```text
 http://localhost:3001,https://nomina-web-xxxx.onrender.com
 ```
 
-4. Guarda → Render redespliega la API.
+Sustituye `nomina-web-xxxx` por el subdominio real de tu servicio **nomina-web**. Guarda; Render redespliega la API automáticamente.
+
+Varios orígenes van separados por **coma**, sin espacios. El valor debe coincidir **exactamente** con lo que muestra la barra del navegador (`https://`, sin `/` final).
 
 ---
 
 ## 14. Prueba final de la aplicación
 
-1. Abre `https://nomina-web-xxxx.onrender.com/login`.
-2. Si la API estaba dormida, espera y recarga (cold start 30–90 s).
+1. Abre `https://TU-FRONT.onrender.com/login`.
+2. Si la API estaba en spin down, espera ~1 minuto y recarga (pantalla de Render).
 3. **Inicia sesión** (sin login no hay token ni datos).
-4. DevTools → **Network**: peticiones a `https://nomina-api-xxxx.onrender.com/api/v1/...` con status **200** / **201** y header `Authorization` tras el login.
+4. DevTools → **Network**: peticiones a `https://TU-API.onrender.com/api/v1/...` con status **200** / **201** y header `Authorization` tras el login.
 5. Flujos del temario base: empleados, procesar pago (+ simulación), boletas, dashboard.
 
 ### 14.1 Checklist Unidad 3 final (cierre de producto)
@@ -394,11 +490,11 @@ http://localhost:3001,https://nomina-web-xxxx.onrender.com
 | Síntoma | Causa probable |
 |---------|----------------|
 | Error CORS | `CORS_ORIGINS` no coincide exactamente con la URL del frontend |
-| Peticiones a `tu-web.onrender.com/api/...` | Falta o está mal `NEXT_PUBLIC_API_URL`; redeploy del frontend |
+| Peticiones al dominio del **front** en `/api/...` (en lugar del API en Render) | Falta o está mal `NEXT_PUBLIC_API_URL`; nuevo deploy del Web Service **nomina-web** |
 | **401** en la API | Sin login o token expirado (`AUTH_TOKEN_TTL_HOURS`) |
 | **403** en configuración | Usuario sin rol gestor |
-| API lenta tras inactividad | Cold start del plan Free |
-| Lista vacía tras redeploy | SQLite efímero; seed o altas manuales |
+| API lenta tras inactividad | Spin down de Render Free; primera petición despierta el servicio |
+| Lista vacía tras redeploy | SQLite efímero; altas manuales o admin recién creado |
 | Asistente sin respuesta | `AI_API_KEY` vacía o proveedor rechaza la clave |
 | **413** o error al guardar foto | Imagen demasiado grande; recortar (límite ~400 KB en cliente, 1 MB en API) |
 
@@ -406,44 +502,51 @@ http://localhost:3001,https://nomina-web-xxxx.onrender.com
 
 ## 15. Variables de entorno (referencia)
 
-### Backend (`backend/.env.example` → Zod en `env.ts`)
+### Backend (`backend/.env.example` → Zod en `backend/src/shared/config/env.ts`)
 
-| Variable | Obligatoria en Render | Descripción |
-|----------|------------------------|-------------|
-| `NODE_ENV` | Recomendada | `production` |
-| `PORT` | No (Render la define) | Puerto de escucha |
-| `CORS_ORIGINS` | **Sí** | Orígenes del frontend, separados por coma |
-| `DATABASE_FILE` | Recomendada | Ruta del archivo SQLite |
-| `AUTH_SECRET` | **Sí** | Firma de tokens JWT |
-| `AUTH_TOKEN_TTL_HOURS` | Opcional | Caducidad del token (default 12) |
-| `RATE_LIMIT_MAX` | Opcional | Límite por IP / 15 min (default prod. 300) |
-| `AI_API_KEY` | Para asistente | Clave API del proveedor LLM; no commitear |
-| `AI_BASE_URL` | Opcional | Default Groq OpenAI-compatible |
-| `AI_MODEL` | Opcional | ID del modelo en el proveedor |
-| `NODE_VERSION` | Recomendada | `22.18.0` o compatible |
+| Variable | Obligatoria en Render | Default si omites | Dónde configurarla |
+|----------|----------------------|-------------------|---------------------|
+| `NODE_ENV` | Recomendada (`production`) | `development` | Environment |
+| `PORT` | No (Render la define) | `3000` | Inyectada por Render |
+| `CORS_ORIGINS` | **Sí** | `http://localhost:3001` | Environment |
+| `DATABASE_FILE` | Recomendada | `data/nomina.db` | Environment |
+| `AUTH_SECRET` | **Sí** | *(dev inseguro en código)* | Environment |
+| `AUTH_TOKEN_TTL_HOURS` | Opcional | `12` | Environment |
+| `RATE_LIMIT_MAX` | Opcional | `300` en prod. vía schema | Environment |
+| `AI_API_KEY` | **Sí para asistente** | vacío → chat error 503 | Environment |
+| `AI_BASE_URL` | Opcional | `https://api.groq.com/openai/v1` | Environment |
+| `AI_MODEL` | Opcional | `openai/gpt-oss-20b` | Environment |
+| `NODE_VERSION` | Recomendada | — | Environment (`22.18.0`) |
 
-### Frontend (Web Service Next en Render)
+Referencia local: copia `backend/.env.example` → `backend/.env` para desarrollo; en Render usa solo el dashboard.
+
+### Frontend (Render — servicio `nomina-web`)
 
 | Variable | Obligatoria | Descripción |
 |----------|-------------|-------------|
+| `NODE_ENV` | Recomendada | `production` |
+| `NODE_VERSION` | Recomendada | `22.18.0` (o alineado con tu Node local) |
 | `NEXT_PUBLIC_API_URL` | **Sí** | URL base de la API, ej. `https://nomina-api-xxxx.onrender.com/api/v1` |
+| `PORT` | No | Inyectada por Render en runtime (usar en Start Command, no fijar a mano) |
 
-Se embebe en el bundle en el momento del build; si cambias la URL de la API, **redespliega el frontend**.
+Configúralas en **Render → nomina-web → Environment**. Si cambias la URL de la API, **redespliega el frontend**.
 
 ---
 
 ## 16. Solución de problemas
 
-### Build del backend falla
+### Build del backend falla en Render
 
 - Local: `cd backend && npm run build`.
-- Node: `NODE_VERSION=22.18.0`.
-- Si falta `@types/node` en el build: el backend lleva TypeScript en `dependencies`; prueba **Build Command** `npm install --include=dev && npm run build`.
+- En Render → **Logs**, revisa que `npm install && npm run build` termine sin error de TypeScript.
+- Confirma **Root Directory** = `backend` y Node **22.x** si el runtime lo permite en Settings.
 
-### Build del frontend falla
+### Build del frontend falla en Render
 
 - Local: `cd frontend && npm run build`.
-- Revisa que `next build` termine sin errores.
+- **Render:** confirma **Root Directory** = `frontend`; en **Logs**, que se ejecute `next build --webpack` como en `package.json`.
+- **Render:** si falla la versión de Node, añade `NODE_VERSION` = `22.18.0` en Environment.
+- **Render:** si el servicio arranca pero no responde, revisa que **Start Command** sea `npm run start:render` (no `npm start` con puerto fijo 3001).
 
 ### La API responde pero el front no carga datos
 
@@ -454,11 +557,11 @@ Se embebe en el bundle en el momento del build; si cambias la URL de la API, **r
 
 ### En el navegador, `/api/v1/empleados` devuelve `NO_AUTENTICADO`
 
-Es **comportamiento correcto**. Esa ruta (y casi todo bajo `/api/v1` salvo `/health` y `POST /auth/login`) exige el header `Authorization: Bearer <token>`. Abrir la URL en la barra de direcciones **no** envía ese header.
+Es **comportamiento correcto**. Esa ruta exige `Authorization: Bearer <token>`.
 
 Para ver el JSON de empleados:
 
-- **PowerShell** (sección 10): login → `Invoke-RestMethod` a `/empleados` con el token.
+- **PowerShell** (sección 10).
 - **Consola del navegador** en tu app ya logueada:
 
   ```javascript
@@ -468,25 +571,28 @@ Para ver el JSON de empleados:
   }).then((r) => r.json()).then(console.log);
   ```
 
-- **Postman** u otra herramienta HTTP con Bearer tras el login.
+### Redespliegues
 
-### Desplegar solo backend o solo frontend
-
-Cada push a `main` redeploya el servicio conectado, o **Manual Deploy** → **Deploy latest commit**.
+- **Render (API):** push a `main` (auto-deploy) o **Manual Deploy** en el dashboard del servicio **nomina-api**.
+- **Render (frontend):** push a `main` o **Manual Deploy** en **nomina-web**; cambiar `NEXT_PUBLIC_API_URL` requiere rebuild.
 
 ### Colección Postman
 
-`docs/nomina-api.postman_collection.json`: cambia `baseUrl` a `https://TU-API.onrender.com/api/v1`. Añade primero `POST /auth/login` y usa `Bearer {{token}}` en el resto (la colección puede no incluir auth; el flujo de la sección 10 es la referencia).
+`docs/nomina-api.postman_collection.json`: cambia `baseUrl` a `https://TU-API.onrender.com/api/v1`. Flujo de login: sección 10.
 
 ### El asistente muestra error al enviar mensaje
 
-1. En el Web Service API, confirma `AI_API_KEY` (sin espacios ni comillas extra).
-2. Revisa **Logs** de la API: errores 401/429 del proveedor (clave inválida o cuota).
+1. En Render → **Environment**, confirma `AI_API_KEY`.
+2. **Logs** del servicio — errores 401/429 del proveedor.
 3. El chat solo habla con la API Express; no hace falta variable en Next.
 
-### Helmet / recursos externos
+### El servicio Render no arranca / deploy fallido
 
-La API usa Helmet; el frontend sirve fuentes e iconos desde el propio bundle (`@fontsource`). No se requiere CDN extra en Render.
+1. **Logs** del Web Service (build y runtime).
+2. Comprueba variables obligatorias (`AUTH_SECRET`, `CORS_ORIGINS`).
+3. **Manual Deploy** → **Clear build cache & deploy** si el build quedó corrupto.
+
+Si el servicio free está **suspended** por cuota mensual, espera al siguiente mes o añade método de pago según la política de tu workspace.
 
 ---
 
@@ -494,30 +600,106 @@ La API usa Helmet; el frontend sirve fuentes e iconos desde el propio bundle (`@
 
 | Acción | Qué hacer |
 |--------|-----------|
-| Cambio solo en API | Push → redeploy Web Service API |
-| Cambio solo en Next | Push → redeploy Web Service frontend |
-| Cambiar URL de API | Actualizar `NEXT_PUBLIC_API_URL` + redeploy frontend |
-| Cambiar dominio del front | Actualizar `CORS_ORIGINS` + redeploy API |
-| Rotar `AUTH_SECRET` | Todos los tokens vigentes invalidan; usuarios deben volver a iniciar sesión |
-| Rotar o revocar `AI_API_KEY` | Solo afecta al asistente; la planilla sigue operando |
+| Cambio solo en API | Push a `main` o **Manual Deploy** en Render |
+| Cambio solo en Next | Push → redeploy en **nomina-web** (Render) |
+| Cambiar URL de API | Actualizar `NEXT_PUBLIC_API_URL` + **redeploy** frontend |
+| Cambiar dominio del front | Actualizar `CORS_ORIGINS` en Render → Environment |
+| Rotar `AUTH_SECRET` | Tokens vigentes invalidan; usuarios deben volver a iniciar sesión |
+| Rotar `AI_API_KEY` | Solo afecta al asistente |
 
 ---
 
 ## 18. Asistente IA en producción
 
-El módulo `backend/src/modules/asistente/` expone `POST /api/v1/asistente/chat` (protegido con JWT). El modelo por defecto apunta a **Groq** (`AI_BASE_URL` + `AI_MODEL` en `backend/.env.example`).
+El asistente es parte del **cierre de producto Unidad 3**: responde en español sobre planilla, módulos de la app y normativa configurada, sin exponer claves ni llamar a modelos desde el navegador.
 
-1. Crea una clave en el proveedor (ej. [Groq Console](https://console.groq.com)).
-2. En Render → Web Service **nomina-api** → **Environment**:
-   - `AI_API_KEY` = tu clave
-   - Opcional: `AI_BASE_URL`, `AI_MODEL` si cambias de proveedor compatible con API OpenAI.
-3. Redespliega la API.
-4. En la web logueada, abre el FAB del asistente y envía una pregunta de prueba (“¿Qué es el adelanto quincenal?”).
+### 18.1 Arquitectura (frontend y API en Render)
 
-**Prueba con token (PowerShell):**
+```text
+Navegador (Render — nomina-web)
+  → FAB + panel (AiAsistenteFab en frontend/src/core/layout/)
+  → apiPost /asistente/chat (misma NEXT_PUBLIC_API_URL + JWT)
+  → Render Express (nomina-api)
+  → AsistenteService + conocimiento.ts + resumen de Configuracion en vivo
+  → fetch OpenAI-compatible (llm-cliente.ts) → Groq u otro proveedor
+```
+
+| Capa | Responsabilidad |
+|------|-----------------|
+| **Frontend** | UI del chat; envía `mensaje` + `historial` (últimos turnos) |
+| **API** | Valida JWT; arma prompt de sistema; llama al LLM |
+| **Proveedor** | Solo recibe peticiones del **servidor** con `AI_API_KEY` |
+
+**Nunca** configures `AI_API_KEY` en el servicio **nomina-web** ni en variables `NEXT_PUBLIC_*`.
+
+### 18.2 Endpoint y contrato
+
+| | |
+|--|--|
+| **Ruta** | `POST /api/v1/asistente/chat` |
+| **Auth** | `Authorization: Bearer <token>` (obligatorio) |
+| **Body** | `{ "mensaje": string, "historial": [{ "role": "user"\|"assistant", "content": string }] }` |
+| **Respuesta** | `{ "data": { "respuesta": string, "proveedor": "llm" } }` |
+
+El servicio (`asistente.service.ts`):
+
+- Lee **configuración actual** (RMV, UIT, tasas AFP, empresa, adelanto quincenal, etc.) y la inyecta al prompt.
+- Une fragmentos de **`conocimiento.ts`** (módulos, roles, reglas de planilla).
+- Recorta el historial a los **últimos 12** mensajes.
+- Usa `temperature: 0.4`, `max_tokens: 900` en `llm-cliente.ts`.
+
+### 18.3 Configurar Groq en Render (recomendado)
+
+1. Cuenta en [Groq Console](https://console.groq.com) → **API Keys** → crear clave.
+2. Render → **nomina-api** → **Environment**:
+
+   | Key | Value |
+   |-----|--------|
+   | `AI_API_KEY` | tu clave `gsk_…` |
+   | `AI_BASE_URL` | `https://api.groq.com/openai/v1` |
+   | `AI_MODEL` | `openai/gpt-oss-20b` (o modelo compatible listado en Groq) |
+
+3. **Save Changes** (redeploy automático).
+4. Espera **Live**; si la API estaba dormida, la primera petición puede tardar ~1 min.
+
+### 18.4 Otro proveedor OpenAI-compatible
+
+Cualquier API con `POST …/chat/completions` y header `Authorization: Bearer`:
+
+| Key | Ejemplo OpenAI oficial |
+|-----|-------------------------|
+| `AI_BASE_URL` | `https://api.openai.com/v1` |
+| `AI_MODEL` | `gpt-4o-mini` |
+| `AI_API_KEY` | clave del proveedor |
+
+Ajusta modelo y URL según la documentación del proveedor; el código no cambia.
+
+### 18.5 Errores típicos del asistente
+
+| Código HTTP / API | Causa | Acción |
+|-------------------|--------|--------|
+| **503** `IA_NO_CONFIGURADA` | `AI_API_KEY` vacía en Render | Añadir clave y redeploy |
+| **502** `IA_NO_DISPONIBLE` | Render no alcanza internet/proveedor | Revisar logs; reintentar |
+| **502** `IA_ERROR` | Clave inválida, modelo inexistente, cuota 429 | Logs del servicio; revisar Groq dashboard |
+| **401** | Sin login o token expirado | Volver a iniciar sesión en el frontend |
+| Error CORS | Origen del front no está en `CORS_ORIGINS` | Sección [13](#13-ajustar-cors-con-la-url-final-del-frontend) |
+
+En **Logs** del Web Service verás líneas JSON de acceso con `POST /api/v1/asistente/chat` y códigos de estado.
+
+### 18.6 Probar en la aplicación (Render)
+
+1. Login en `https://TU-FRONT.onrender.com`.
+2. Botón flotante **asistente** (esquina; ver `frontend/src/styles/ai-asistente.css`).
+3. Preguntas de prueba sugeridas:
+   - *¿Qué es el adelanto quincenal y cómo se configura?*
+   - *¿Qué roles pueden entrar a configuración?*
+   - *¿Qué hace el módulo de boletas?*
+4. Cambia tasas en **Configuración** (como gestor) y repite una pregunta sobre AFP: la respuesta debe alinear con la configuración viva.
+
+### 18.7 Probar con PowerShell (API directa)
 
 ```powershell
-$base = "https://TU-SERVICIO-API.onrender.com/api/v1"
+$base = "https://TU-API.onrender.com/api/v1"
 $login = Invoke-RestMethod -Method Post -Uri "$base/auth/login" `
   -ContentType "application/json" -Body '{"usuario":"TU_USUARIO","password":"TU_CLAVE"}'
 $body = '{"mensaje":"Resume las tasas AFP del sistema","historial":[]}'
@@ -527,22 +709,123 @@ Invoke-RestMethod -Method Post -Uri "$base/asistente/chat" `
   -Body $body
 ```
 
-Sin `AI_API_KEY`, la API puede arrancar igual; solo fallará el endpoint del asistente.
+Respuesta esperada: propiedad `data.respuesta` con texto en español.
+
+### 18.8 Costes y límites del proveedor
+
+- Groq y otros proveedores pueden tener **límites de tokens/rpm** en tier gratuito.
+- El asistente **no** cachea respuestas; cada mensaje es una llamada al LLM.
+- Para demo de curso, el tier gratuito de Groq suele bastar; monitoriza errores **429** en logs.
+
+---
+
+## 19. Otras plataformas
+
+| Plataforma | Notas |
+|------------|--------|
+| **Fly.io / Railway** | API en contenedor o Node; requiere CLI o dashboard; cuotas free limitadas. |
+| **VPS (Oracle Always Free, etc.)** | Mejor persistencia SQLite; más configuración manual. |
+| **Túnel + local** | Cloudflare Tunnel o ngrok para demos sin hostear la API si Render está suspendido. |
+
+El flujo de variables (`AUTH_SECRET`, `CORS_ORIGINS`, `NEXT_PUBLIC_API_URL`, `AI_*`) es el mismo; solo cambia cómo defines el entorno y el comando de deploy.
+
+---
+
+## 20. Mapa de la API y autenticación
+
+Prefijo base: `https://TU-API.onrender.com/api/v1`
+
+| Ruta | Auth | Descripción |
+|------|------|-------------|
+| `GET /health` | No | Estado del servicio |
+| `POST /auth/login` | No | Devuelve JWT |
+| `GET /auth/me` | Sí | Perfil actual |
+| `PATCH /auth/me` | Sí | Actualizar perfil (foto, etc.) |
+| `POST /auth/cambiar-password` | Sí | Cambio de contraseña |
+| `GET/POST /usuarios…` | Sí + roles | Gestión de usuarios |
+| `GET/POST/PUT/DELETE /empleados…` | Sí | CRUD empleados |
+| `GET/POST /pagos…` | Sí | Planilla y boletas |
+| `GET/PUT /configuracion` | Sí; PUT solo gestor | Tasas y empresa |
+| `DELETE /datos` | Sí + gestor | Reinicio de datos |
+| `GET /dashboard…` | Sí | Métricas para gráficos |
+| `POST /asistente/chat` | Sí | Chat IA |
+
+El token se guarda en el cliente como `nomina_auth_token` en **`sessionStorage`** (`frontend/src/shared/infrastructure/http/apiClient.ts`). Cierra sesión o caducidad (`AUTH_TOKEN_TTL_HOURS`, default **12 h**) obliga a login de nuevo.
+
+**Rate limit:** con `NODE_ENV=production`, Express limita peticiones por IP (`RATE_LIMIT_MAX`, default **300** / 15 min en prod.; en local el default de `.env.example` puede ser mayor).
+
+Colección **Postman**: `docs/nomina-api.postman_collection.json` — variable `baseUrl` = tu API; añade un request `POST /auth/login`, guarda el token y usa **Bearer** en el resto (la colección puede requerir completar auth manualmente).
+
+---
+
+## 21. Funcionalidades del proyecto en producción
+
+Todas las capacidades de Unidad 3 deben probarse contra **Render** (API + frontend; no solo local).
+
+| Módulo | En producción | Notas de despliegue |
+|--------|---------------|---------------------|
+| **Login / JWT** | Render (API + web) | `AUTH_SECRET` en **nomina-api** |
+| **Empleados** | API **nomina-api**; UI **nomina-web** | Filtros, alta/edición |
+| **Export CSV** | **Solo navegador** | No requiere env extra; generado en cliente |
+| **Export Excel `.xlsx`** | **Solo navegador** (ExcelJS) | Idem |
+| **Procesar pago / simulación** | API Render | |
+| **Boletas + PDF** | PDF en **cliente** (`boletasPdf.ts`) | |
+| **Dashboard** | API Render | Gráficos con datos existentes |
+| **Configuración** | API Render; solo gestores | Logo en base64; límite **1 MB** cuerpo JSON |
+| **Usuarios + foto** | API Render | Recortar imagen en cliente (~400 KB recomendado) |
+| **Tema claro/oscuro** | Solo frontend (CSS/React) | |
+| **Asistente FAB** | API Render + `AI_*` | Ver sección 18 |
+| **Panel inicio / marca** | **nomina-web** (`public/`) | |
+
+### 21.1 Checklist extendido (incluye IA)
+
+Además de la tabla en [14.1](#141-checklist-unidad-3-final-cierre-de-producto), verifica:
+
+- [ ] Export CSV desde empleados (descarga con BOM UTF-8)
+- [ ] Export Excel con filtros de tabla
+- [ ] PDF o impresión de al menos una boleta
+- [ ] Dashboard con al menos un pago emitido
+- [ ] Usuario **gestor** accede a configuración; usuario **operativo** no
+- [ ] Alta de usuario con foto; `PATCH /auth/me` con foto propia
+- [ ] Asistente: tres preguntas distintas con respuestas coherentes
+- [ ] Tras cambiar RMV o tasas AFP en configuración, el asistente refleja el cambio en una pregunta nueva
+
+---
+
+## 22. Seguridad y buenas prácticas
+
+| Tema | Recomendación |
+|------|----------------|
+| `AUTH_SECRET` | Generar aleatorio ≥ 16 caracteres; **distinto** al de `backend/.env.example` |
+| Contraseña admin inicial | Cambiar en el primer login en producción |
+| `AI_API_KEY` | Solo en Render; rotar si se filtra |
+| `.env` | Nunca en Git (ya en `.gitignore`) |
+| `CORS_ORIGINS` | Lista mínima de orígenes reales; evita `*` |
+| HTTPS | Siempre `https://` en `NEXT_PUBLIC_API_URL` y CORS |
+| SQLite en Render Free | No usar para datos sensibles reales; es efímero |
+| JWT en `sessionStorage` | Se pierde al cerrar pestaña; coherente con demo de curso |
+
+Helmet está activo en la API (`backend/src/app.ts`). El frontend sirve fuentes desde `@fontsource` en el bundle; no hace falta whitelist de CDN extra en Render.
 
 ---
 
 ## Resumen rápido (checklist)
 
 - [ ] Código en GitHub (`main`), sin `.env` ni `*.db` (véase [`.gitignore`](../.gitignore))
-- [ ] Web Service `backend/` con `AUTH_SECRET` de producción y `CORS_ORIGINS`
-- [ ] `/api/v1/health` responde OK; login devuelve token
-- [ ] Web Service `frontend/` con `NEXT_PUBLIC_API_URL` absoluta (incluye `/api/v1`)
-- [ ] `CORS_ORIGINS` incluye `https://nomina-web-....onrender.com` (y `http://localhost:3001` si sigues en local)
-- [ ] Flujos Unidad 3 final probados (sección 14.1)
-- [ ] Opcional: `AI_API_KEY` para el asistente (sección 18)
-
----
+- [ ] API en Render (`backend/` Web Service, Free) con `AUTH_SECRET`, `NODE_ENV=production`, `CORS_ORIGINS`
+- [ ] Health check `/api/v1/health`; login devuelve token; contraseña inicial cambiada
+- [ ] Frontend en Render — **nomina-web** (`frontend/`, Start `npm run start:render`, `NEXT_PUBLIC_API_URL` con `/api/v1`, Node 22.x)
+- [ ] `CORS_ORIGINS` incluye la URL exacta del front (`https://….onrender.com`) y `http://localhost:3001`
+- [ ] Datos de demo: UI, y/o `npm run seed` en Render Shell (sección 11)
+- [ ] **`AI_API_KEY`** (y opcionalmente `AI_BASE_URL`, `AI_MODEL`) en **nomina-api**; asistente probado en el frontend (sección 18)
+- [ ] Checklist funcional completo (secciones [14.1](#141-checklist-unidad-3-final-cierre-de-producto) y [21.1](#211-checklist-extendido-incluye-ia))
+- [ ] Postman o PowerShell probados con `baseUrl` de producción (sección 20)
 
 **Autor del proyecto:** Jesús Pantoja — curso JavaScript Avanzado (UTP).
 
-Render también soporta **Blueprints** (`render.yaml` en la raíz); este repo no incluye uno aún. Esta guía usa el dashboard visual, más claro la primera vez.
+Render soporta **Blueprints** (`render.yaml` en la raíz del repo). Puedes desplegar de dos formas:
+
+1. **Blueprint:** Dashboard → **Blueprints** → **New Blueprint** → selecciona este repositorio. Se crean **nomina-api** y **nomina-web**; luego completa `NEXT_PUBLIC_API_URL`, `CORS_ORIGINS` y opcionalmente `AI_API_KEY` como indica el comentario al inicio de `render.yaml`.
+2. **Manual (dashboard):** secciones [8](#8-desplegar-la-api-en-render) y [12](#12-desplegar-el-frontend-en-render) — mismos comandos que el Blueprint.
+
+Ambas opciones cubren **todo el producto en Render**, incluido el asistente IA.
