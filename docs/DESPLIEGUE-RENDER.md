@@ -400,7 +400,7 @@ Necesitas la URL de la API del paso [8.5](#85-copiar-la-url-de-la-api).
 | **Region** | La misma que la API (menor latencia entre servicios) |
 | **Root Directory** | `frontend` |
 | **Runtime** | Node |
-| **Build Command** | `npm install && npm run build` |
+| **Build Command** | `npm install --include=dev && npm run build` |
 | **Start Command** | `npm run start:render` |
 | **Instance Type** | **Free** |
 | **Auto-Deploy** | **Yes** |
@@ -545,6 +545,7 @@ Configúralas en **Render → nomina-web → Environment**. Si cambias la URL de
 
 - Local: `cd frontend && npm run build`.
 - **Render:** confirma **Root Directory** = `frontend`; en **Logs**, que se ejecute `next build --webpack` como en `package.json`.
+- **Render:** si el log dice *“do not have the required package(s) installed”* y pide `typescript` / `@types/*`, el servicio tiene `NODE_ENV=production` y `npm install` **omite devDependencies**. Usa **Build Command** `npm install --include=dev && npm run build` (no solo `npm install && npm run build`).
 - **Render:** si falla la versión de Node, añade `NODE_VERSION` = `22.18.0` en Environment.
 - **Render:** si el servicio arranca pero no responde, revisa que **Start Command** sea `npm run start:render` (no `npm start` con puerto fijo 3001).
 
