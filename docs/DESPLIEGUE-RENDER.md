@@ -545,7 +545,7 @@ Configúralas en **Render → nomina-web → Environment**. Si cambias la URL de
 
 - Local: `cd frontend && npm run build`.
 - **Render:** confirma **Root Directory** = `frontend`; en **Logs**, que se ejecute `next build --webpack` como en `package.json`.
-- **Render:** si el log dice *“do not have the required package(s) installed”* y pide `typescript` / `@types/*`, el servicio tiene `NODE_ENV=production` y `npm install` **omite devDependencies**. Usa **Build Command** `npm install --include=dev && npm run build` (no solo `npm install && npm run build`).
+- **Render:** si el log dice *“do not have the required package(s) installed”* y pide `typescript` / `@types/*`, el servicio tiene `NODE_ENV=production` y `npm install` **omite devDependencies**. Solución A: **Build Command** `npm install --include=dev && npm run build`. Solución B (este repo): `typescript` y `@types/*` están en **dependencies** de `frontend/package.json` para que `npm install && npm run build` baste.
 - **Render:** si falla la versión de Node, añade `NODE_VERSION` = `22.18.0` en Environment.
 - **Render:** si el servicio arranca pero no responde, revisa que **Start Command** sea `npm run start:render` (no `npm start` con puerto fijo 3001).
 
