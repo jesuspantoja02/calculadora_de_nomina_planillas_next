@@ -50,8 +50,16 @@ function tasasATexto(t: Partial<TasasAfp> | Record<string, unknown> | undefined)
   };
 }
 
+/** Respuesta del API con nombres de campos legacy opcionales. */
+type ConfiguracionConLegacy = Configuracion & {
+  tasasAfp?: Configuracion['afpTasas'];
+  aporteAfpPct?: number;
+  primaSeguroPct?: number;
+  comisionFlujoPct?: number;
+};
+
 /** Acepta `afpTasas` (nuevo) o `tasasAfp` / planos legacy para no romper la pantalla. */
-function desdeConfig(c: Configuracion & Record<string, unknown>): FormState {
+function desdeConfig(c: ConfiguracionConLegacy): FormState {
   const mapa =
     (c.afpTasas as Configuracion['afpTasas'] | undefined) ??
     (c.tasasAfp as Configuracion['afpTasas'] | undefined) ??
