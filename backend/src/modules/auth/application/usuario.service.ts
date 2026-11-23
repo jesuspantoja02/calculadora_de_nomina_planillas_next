@@ -13,10 +13,35 @@ export interface UsuarioDto {
   rol: RolUsuario;
   fotoPerfilUrl: string;
   creadoEn: string;
+  intentosFallidos: number;
+  bloqueadoHasta: string | null;
+  bloqueada: boolean;
+  habilitado: boolean;
 }
 
-function aDto(u: { id: string; usuario: string; rol: RolUsuario; fotoPerfilUrl: string; creadoEn: string }): UsuarioDto {
-  return { id: u.id, usuario: u.usuario, rol: u.rol, fotoPerfilUrl: u.fotoPerfilUrl, creadoEn: u.creadoEn };
+function aDto(u: {
+  id: string;
+  usuario: string;
+  rol: RolUsuario;
+  fotoPerfilUrl: string;
+  creadoEn: string;
+  intentosFallidos: number;
+  bloqueadoHasta: string | null;
+  habilitado: boolean;
+}): UsuarioDto {
+  const hasta = u.bloqueadoHasta ? Date.parse(u.bloqueadoHasta) : NaN;
+  const bloqueada = !Number.isNaN(hasta) && hasta > Date.now();
+  return {
+    id: u.id,
+    usuario: u.usuario,
+    rol: u.rol,
+    fotoPerfilUrl: u.fotoPerfilUrl,
+    creadoEn: u.creadoEn,
+    intentosFallidos: u.intentosFallidos,
+    bloqueadoHasta: bloqueada ? u.bloqueadoHasta : null,
+    bloqueada,
+    habilitado: u.habilitado,
+  };
 }
 
 export class UsuarioGestionService {
@@ -44,6 +69,7 @@ export class UsuarioGestionService {
       passwordHash: hashPassword(body.password),
       rol: body.rol,
       fotoPerfilUrl: body.fotoPerfilUrl ?? '',
+      habilitado: true,
       creadoEn: new Date().toISOString(),
     });
     return aDto(creado);
@@ -61,6 +87,14 @@ export class UsuarioGestionService {
     if (body.rol !== undefined && existente.rol === 'admin' && body.rol !== 'admin') {
       this.#asegurarOtroAdmin(id);
     }
+    if (body.habilitado === false) {
+      if (actor.sub === id) {
+        throw new AppError(400, 'AUTO_DESHABILITACION', 'No puedes deshabilitar tu propia cuenta mientras tienes la sesión abierta.');
+      }
+      if (existente.rol === 'admin') {
+        this.#asegurarOtroAdmin(id);
+      }
+    }
     if (body.usuario !== undefined && body.usuario.toLowerCase() !== existente.usuario.toLowerCase()) {
       const duplicado = this.#usuarios.buscarPorUsuario(body.usuario);
       if (duplicado && duplicado.id !== id) {
@@ -73,6 +107,7 @@ export class UsuarioGestionService {
       passwordHash: body.password ? hashPassword(body.password) : undefined,
       rol: body.rol,
       fotoPerfilUrl: body.fotoPerfilUrl,
+      habilitado: body.habilitado,
     });
     return aDto(actualizado);
   }
@@ -91,15 +126,27 @@ export class UsuarioGestionService {
     this.#usuarios.eliminar(id);
   }
 
+  /** Libera el bloqueo por intentos fallidos (solo admin vía rutas). */
+  desbloquear(id: string): UsuarioDto {
+    const existente = this.#usuarios.buscarPorId(id);
+    if (!existente) {
+      throw new AppError(404, 'NO_ENCONTRADO', 'Usuario no encontrado.');
+    }
+    const actualizado = this.#usuarios.actualizar(id, { intentosFallidos: 0, bloqueadoHasta: null });
+    return aDto(actualizado);
+  }
+
   rolesAsignables(actor: TokenPayload): RolUsuario[] {
     const todos: RolUsuario[] = ['admin', 'jefe', 'gerente', 'usuario'];
     return todos.filter((r) => puedeAsignarRol(actor.rol, r));
   }
 
   #asegurarOtroAdmin(excluirId: string): void {
-    const admins = this.#usuarios.listar().filter((u) => u.rol === 'admin' && u.id !== excluirId);
+    const admins = this.#usuarios
+      .listar()
+      .filter((u) => u.rol === 'admin' && u.habilitado && u.id !== excluirId);
     if (admins.length === 0) {
-      throw new AppError(400, 'ULTIMO_ADMIN', 'Debe quedar al menos un administrador en el sistema.');
+      throw new AppError(400, 'ULTIMO_ADMIN', 'Debe quedar al menos un administrador habilitado en el sistema.');
     }
   }
 }

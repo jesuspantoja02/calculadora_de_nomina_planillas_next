@@ -16,7 +16,11 @@ export function requiereAuth(auth: AuthService): RequestHandler {
       return;
     }
 
-    req.auth = auth.validarToken(token);
-    next();
+    try {
+      req.auth = auth.validarAcceso(token);
+      next();
+    } catch (err) {
+      next(err);
+    }
   };
 }

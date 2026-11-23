@@ -24,6 +24,7 @@ test('gestión de usuarios: roles y permisos', () => {
 
   const lista = usuariosGestion.listar();
   assert.ok(lista.length >= 2);
+  assert.equal(operador.habilitado, true);
 
   const sesionOperador = auth.iniciarSesion({ usuario: 'operador.rrhh', password: 'Operador1!' });
   const payloadOperador = auth.validarToken(sesionOperador.token);
@@ -32,6 +33,17 @@ test('gestión de usuarios: roles y permisos', () => {
     () => usuariosGestion.crear(payloadOperador, { usuario: 'otro', password: 'Otro1234!', rol: 'usuario' }),
     (e) => e instanceof AppError && e.status === 403,
   );
+
+  const deshabilitado = usuariosGestion.actualizar(payloadAdmin, operador.id, { habilitado: false });
+  assert.equal(deshabilitado.habilitado, false);
+  assert.throws(
+    () => auth.iniciarSesion({ usuario: 'operador.rrhh', password: 'Operador1!' }),
+    (e) => e instanceof AppError && e.code === 'CUENTA_DESHABILITADA',
+  );
+
+  const rehabilitado = usuariosGestion.actualizar(payloadAdmin, operador.id, { habilitado: true });
+  assert.equal(rehabilitado.habilitado, true);
+  assert.ok(auth.iniciarSesion({ usuario: 'operador.rrhh', password: 'Operador1!' }).token);
 
   db.close();
 });

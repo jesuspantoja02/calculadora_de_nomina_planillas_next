@@ -6,6 +6,7 @@ export interface CrearUsuarioInput {
   passwordHash: string;
   rol: RolUsuario;
   fotoPerfilUrl?: string;
+  habilitado?: boolean;
   creadoEn: string;
 }
 
@@ -14,6 +15,10 @@ export interface ActualizarUsuarioInput {
   passwordHash?: string;
   rol?: RolUsuario;
   fotoPerfilUrl?: string;
+  intentosFallidos?: number;
+  /** Pasar `null` para limpiar el bloqueo. */
+  bloqueadoHasta?: string | null;
+  habilitado?: boolean;
 }
 
 export interface UsuarioRepository {

@@ -1,6 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../auth/AuthContext';
+import { ApiError } from '../../shared/infrastructure/http/apiClient';
+import {
+  inspeccionarCuentaApi,
+  recuperarAdminApi,
+  type CuentaLoginInfo,
+} from '../auth/authApi';
+import { etiquetaRol } from '../auth/roles';
 import {
   borrarCredencialesRecordadas,
   guardarCredencialesRecordadas,
@@ -20,6 +27,13 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const [modoRecuperar, setModoRecuperar] = useState(false);
+  const [cuentaInfo, setCuentaInfo] = useState<CuentaLoginInfo | null>(null);
+  const [claveRecuperacion, setClaveRecuperacion] = useState('');
+  const [passwordNueva, setPasswordNueva] = useState('');
+  const [passwordNueva2, setPasswordNueva2] = useState('');
+  const [mostrarNueva, setMostrarNueva] = useState(false);
+  const [exitoRecuperar, setExitoRecuperar] = useState('');
 
   useEffect(() => {
     const recordadas = leerCredencialesRecordadas();
@@ -47,6 +61,7 @@ export function LoginPage() {
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
+    setExitoRecuperar('');
     setLoading(true);
 
     const result = await login(usuario, password);
@@ -66,6 +81,75 @@ export function LoginPage() {
     window.setTimeout(() => {
       void router.replace('/');
     }, 320);
+  };
+
+  const abrirRecuperacion = async () => {
+    setError('');
+    setExitoRecuperar('');
+    const nombre = usuario.trim();
+    if (!nombre) {
+      setError('Escribe primero el usuario con el que intentas iniciar sesión.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const info = await inspeccionarCuentaApi(nombre);
+      setCuentaInfo(info);
+      // Defensa: si el proxy apunta a otra API sin `encontrada`, no fingir que el usuario no existe.
+      if (typeof info.encontrada !== 'boolean') {
+        setError(
+          'La API de autenticación no respondió como se espera. Revisa que el backend de este proyecto (puerto 3002) esté encendido.',
+        );
+        return;
+      }
+      if (!info.encontrada) {
+        setError('No hay una cuenta con ese usuario.');
+        return;
+      }
+      if (!info.puedeRecuperarAdmin) {
+        setError(
+          info.habilitado === false
+            ? `La cuenta «${info.usuario}» está deshabilitada. Pide a un administrador que la habilite en Usuarios del sistema.`
+            : info.bloqueada
+              ? `La cuenta «${info.usuario}» está bloqueada. Espera 5 minutos o pide a un administrador que la libere en Usuarios.`
+              : `La cuenta «${info.usuario}» (${info.rol ? etiquetaRol(info.rol) : 'sin rol'}) no puede usar recuperación por clave del sistema. Solo aplica a administradores.`,
+        );
+        return;
+      }
+      setModoRecuperar(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo consultar la cuenta.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRecuperarAdmin = async (event: FormEvent) => {
+    event.preventDefault();
+    setError('');
+    setExitoRecuperar('');
+
+    if (passwordNueva !== passwordNueva2) {
+      setError('Las contraseñas nuevas no coinciden.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await recuperarAdminApi(usuario.trim(), claveRecuperacion, passwordNueva);
+      setPassword(passwordNueva);
+      setClaveRecuperacion('');
+      setPasswordNueva('');
+      setPasswordNueva2('');
+      setModoRecuperar(false);
+      setCuentaInfo(null);
+      setExitoRecuperar('Contraseña de administrador actualizada. Ya puedes iniciar sesión.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo restablecer la contraseña.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -109,100 +193,219 @@ export function LoginPage() {
         <section className="login-page__card login-reveal login-reveal--2" aria-labelledby="login-heading">
           <div className="login-page__card-head login-reveal login-reveal--3">
             <div>
-              <h2 id="login-heading">Acceso al panel</h2>
-              <p>Usa tu usuario registrado. La sesión se protege con token JWT.</p>
+              <h2 id="login-heading">{modoRecuperar ? 'Recuperar acceso admin' : 'Acceso al panel'}</h2>
+              <p>
+                {modoRecuperar
+                  ? 'Cuenta detectada como administrador. Confirma con la clave de recuperación del servidor.'
+                  : 'Usa tu usuario registrado. Tras 3 intentos fallidos la cuenta se bloquea 5 minutos.'}
+              </p>
             </div>
           </div>
 
-          <form onSubmit={onSubmit} noValidate>
-            <div
-              className="login-page__error"
-              role="alert"
-              data-hidden={error ? 'false' : 'true'}
-            >
-              {error || ' '}
-            </div>
-
-            <div className="login-page__field login-reveal login-reveal--3">
-              <label htmlFor="login-usuario">Usuario</label>
-              <div className="login-page__input-wrap">
-                <span className="login-page__input-icon" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </span>
-                <input
-                  id="login-usuario"
-                  type="text"
-                  name="usuario"
-                  autoComplete="username"
-                  required
-                  value={usuario}
-                  onChange={(e) => setUsuario(e.target.value)}
-                  placeholder="Tu usuario"
-                />
+          {modoRecuperar ? (
+            <form onSubmit={onRecuperarAdmin} noValidate>
+              <div className="login-page__error" role="alert" data-hidden={error ? 'false' : 'true'}>
+                {error || ' '}
               </div>
-            </div>
 
-            <div className="login-page__field login-reveal login-reveal--4">
-              <label htmlFor="login-password">Contraseña</label>
-              <div className="login-page__input-wrap login-page__input-wrap--secret">
-                <span className="login-page__input-icon" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </span>
-                <input
-                  id="login-password"
-                  type={mostrarPassword ? 'text' : 'password'}
-                  name="password"
-                  autoComplete="current-password"
-                  required
-                  minLength={6}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-                <PasswordRevealButton
-                  visible={mostrarPassword}
-                  onToggle={() => setMostrarPassword((visible) => !visible)}
-                  className="login-page__reveal"
-                />
+              {cuentaInfo?.encontrada ? (
+                <p className="login-page__cuenta-detectada" role="status">
+                  Cuenta: <strong>{cuentaInfo.usuario}</strong>
+                  {cuentaInfo.rol ? ` · ${etiquetaRol(cuentaInfo.rol)}` : ''}
+                  {cuentaInfo.habilitado === false ? ' · deshabilitada' : ''}
+                  {cuentaInfo.bloqueada ? ' · bloqueada' : ''}
+                </p>
+              ) : null}
+
+              <div className="login-page__field">
+                <label htmlFor="recuperar-clave">Clave de recuperación del sistema</label>
+                <div className="login-page__input-wrap login-page__input-wrap--secret">
+                  <span className="login-page__input-icon" aria-hidden="true">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" />
+                      <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" />
+                    </svg>
+                  </span>
+                  <input
+                    id="recuperar-clave"
+                    type="password"
+                    autoComplete="off"
+                    required
+                    value={claveRecuperacion}
+                    onChange={(e) => setClaveRecuperacion(e.target.value)}
+                    placeholder="ADMIN_RECOVERY_KEY"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="login-page__row login-reveal login-reveal--4">
-              <label className="login-page__remember">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />
-                Recordarme
-              </label>
-              <a className="login-page__link" href="#recuperar" onClick={(e) => e.preventDefault()}>
-                ¿Olvidaste tu clave?
-              </a>
-            </div>
+              <div className="login-page__field">
+                <label htmlFor="recuperar-nueva">Nueva contraseña</label>
+                <div className="login-page__input-wrap login-page__input-wrap--secret">
+                  <span className="login-page__input-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </span>
+                  <input
+                    id="recuperar-nueva"
+                    type={mostrarNueva ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    value={passwordNueva}
+                    onChange={(e) => setPasswordNueva(e.target.value)}
+                    placeholder="Mínimo 8 caracteres"
+                  />
+                  <PasswordRevealButton
+                    visible={mostrarNueva}
+                    onToggle={() => setMostrarNueva((v) => !v)}
+                    className="login-page__reveal"
+                  />
+                </div>
+              </div>
 
-            <button
-              type="submit"
-              className={`login-page__submit login-reveal login-reveal--5${exiting ? ' login-page__submit--exit' : ''}`}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="login-page__spinner" aria-hidden="true" />
-                  Verificando…
-                </>
-              ) : (
-                'Entrar al panel'
-              )}
-            </button>
+              <div className="login-page__field">
+                <label htmlFor="recuperar-nueva2">Confirmar nueva contraseña</label>
+                <div className="login-page__input-wrap">
+                  <span className="login-page__input-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </span>
+                  <input
+                    id="recuperar-nueva2"
+                    type={mostrarNueva ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    value={passwordNueva2}
+                    onChange={(e) => setPasswordNueva2(e.target.value)}
+                    placeholder="Repite la nueva contraseña"
+                  />
+                </div>
+              </div>
 
-          </form>
+              <button type="submit" className="login-page__submit" disabled={loading}>
+                {loading ? 'Guardando…' : 'Restablecer contraseña admin'}
+              </button>
+
+              <button
+                type="button"
+                className="login-page__link login-page__link--block"
+                onClick={() => {
+                  setModoRecuperar(false);
+                  setError('');
+                  setCuentaInfo(null);
+                  setClaveRecuperacion('');
+                  setPasswordNueva('');
+                  setPasswordNueva2('');
+                }}
+              >
+                Volver al inicio de sesión
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={onSubmit} noValidate>
+              <div className="login-page__error" role="alert" data-hidden={error ? 'false' : 'true'}>
+                {error || ' '}
+              </div>
+              {exitoRecuperar ? (
+                <p className="login-page__success" role="status">
+                  {exitoRecuperar}
+                </p>
+              ) : null}
+
+              <div className="login-page__field login-reveal login-reveal--3">
+                <label htmlFor="login-usuario">Usuario</label>
+                <div className="login-page__input-wrap">
+                  <span className="login-page__input-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </span>
+                  <input
+                    id="login-usuario"
+                    type="text"
+                    name="usuario"
+                    autoComplete="username"
+                    required
+                    value={usuario}
+                    onChange={(e) => setUsuario(e.target.value)}
+                    placeholder="Tu usuario"
+                  />
+                </div>
+              </div>
+
+              <div className="login-page__field login-reveal login-reveal--4">
+                <label htmlFor="login-password">Contraseña</label>
+                <div className="login-page__input-wrap login-page__input-wrap--secret">
+                  <span className="login-page__input-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </span>
+                  <input
+                    id="login-password"
+                    type={mostrarPassword ? 'text' : 'password'}
+                    name="password"
+                    autoComplete="current-password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                  <PasswordRevealButton
+                    visible={mostrarPassword}
+                    onToggle={() => setMostrarPassword((visible) => !visible)}
+                    className="login-page__reveal"
+                  />
+                </div>
+              </div>
+
+              <div className="login-page__row login-reveal login-reveal--4">
+                <label className="login-page__remember">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                  />
+                  Recordarme
+                </label>
+                <button type="button" className="login-page__link" onClick={() => void abrirRecuperacion()} disabled={loading}>
+                  ¿Olvidaste tu clave?
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                className={`login-page__submit login-reveal login-reveal--5${exiting ? ' login-page__submit--exit' : ''}`}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="login-page__spinner" aria-hidden="true" />
+                    Verificando…
+                  </>
+                ) : (
+                  'Entrar al panel'
+                )}
+              </button>
+            </form>
+          )}
         </section>
       </div>
     </div>

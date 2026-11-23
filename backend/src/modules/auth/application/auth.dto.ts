@@ -12,6 +12,17 @@ export const cambiarPasswordSchema = z.object({
   passwordNueva: passwordCampo,
 });
 
+/** Solo cuentas con rol admin + ADMIN_RECOVERY_KEY del servidor. */
+export const recuperarAdminSchema = z.object({
+  usuario: z.string().trim().min(1, 'El usuario es obligatorio.').max(64),
+  claveRecuperacion: z.string().min(1, 'Indica la clave de recuperación del sistema.'),
+  passwordNueva: passwordCampo,
+});
+
+export const inspeccionarCuentaSchema = z.object({
+  usuario: z.string().trim().min(1, 'El usuario es obligatorio.').max(64),
+});
+
 export const actualizarPerfilSchema = z.object({
   fotoPerfilUrl: imagenDataUrlCampo,
 });

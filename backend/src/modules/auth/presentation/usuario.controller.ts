@@ -23,5 +23,9 @@ export function crearUsuarioController(servicio: UsuarioGestionService) {
       servicio.eliminar(req.auth!, idUsuarioSchema.parse(req.params['id']));
       res.status(204).end();
     },
+    desbloquear: async (req: Request, res: Response) => {
+      const id = idUsuarioSchema.parse(req.params['id']);
+      res.json({ data: servicio.desbloquear(id) });
+    },
   };
 }

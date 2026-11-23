@@ -7,6 +7,8 @@ export function crearAuthRouter(servicio: AuthService) {
   const router = Router();
   const c = crearAuthController(servicio);
   router.post('/login', c.login);
+  router.post('/inspeccionar-cuenta', c.inspeccionarCuenta);
+  router.post('/recuperar-admin', c.recuperarAdmin);
   router.get('/me', requiereAuth(servicio), c.yo);
   router.patch('/me', requiereAuth(servicio), c.actualizarPerfil);
   router.post('/cambiar-password', requiereAuth(servicio), c.cambiarPassword);

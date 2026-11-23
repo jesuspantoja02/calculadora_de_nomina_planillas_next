@@ -13,7 +13,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3000/api/:path*',
+        // 3002: evita choque con el backend Vue u otros servicios en 3000
+        destination: 'http://localhost:3002/api/:path*',
       },
     ];
   },

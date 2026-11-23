@@ -19,6 +19,7 @@ import { SqlitePagoRepository } from './modules/planilla/infrastructure/sqlite-p
 export interface OpcionesServicios {
   authSecret: string;
   tokenTtlMs: number;
+  adminRecoveryKey?: string;
   aiApiKey?: string;
   aiBaseUrl?: string;
   aiModel?: string;
@@ -29,7 +30,12 @@ export function construirServicios(db: Db, opciones: OpcionesServicios) {
   const pagos = new SqlitePagoRepository(db);
   const configuracion = new SqliteConfiguracionRepository(db); // implementa configuración + mantenimiento
   const usuarios = new SqliteUsuarioRepository(db);
-  const auth = new AuthService(usuarios, opciones.authSecret, opciones.tokenTtlMs);
+  const auth = new AuthService(
+    usuarios,
+    opciones.authSecret,
+    opciones.tokenTtlMs,
+    opciones.adminRecoveryKey ?? '',
+  );
   const usuariosGestion = new UsuarioGestionService(usuarios);
   const configuracionService = new ConfiguracionService(configuracion, configuracion);
   const asistente = new AsistenteService(configuracionService, {

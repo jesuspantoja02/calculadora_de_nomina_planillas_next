@@ -29,9 +29,14 @@ export const actualizarUsuarioSchema = z
     password: passwordCampo.optional(),
     rol: z.enum(ROLES_USUARIO).optional(),
     fotoPerfilUrl: imagenDataUrlCampo.optional(),
+    habilitado: z.boolean().optional(),
   })
   .refine(
     (v) =>
-      v.usuario !== undefined || v.password !== undefined || v.rol !== undefined || v.fotoPerfilUrl !== undefined,
+      v.usuario !== undefined ||
+      v.password !== undefined ||
+      v.rol !== undefined ||
+      v.fotoPerfilUrl !== undefined ||
+      v.habilitado !== undefined,
     { message: 'Indica al menos un campo para actualizar.' },
   );

@@ -8,6 +8,13 @@ const esquema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(300),
   AUTH_SECRET: z.string().min(16).default('dev-nomina-auth-secret-cambiar-en-prod'),
   AUTH_TOKEN_TTL_HOURS: z.coerce.number().positive().max(168).default(12),
+  /** Clave de emergencia para restablecer contraseña de un admin (mín. 16). Vacía = desactivado. */
+  ADMIN_RECOVERY_KEY: z.preprocess(
+    (v) => (typeof v === 'string' ? v.trim() : ''),
+    z.string().refine((v) => v === '' || v.length >= 16, {
+      message: 'ADMIN_RECOVERY_KEY debe tener al menos 16 caracteres (o vacía para desactivar).',
+    }),
+  ),
   /** Clave OpenAI-compatible (OpenAI, Groq, etc.). Obligatoria para el chat; sin fallback local. */
   AI_API_KEY: z.preprocess((v) => (typeof v === 'string' ? v : ''), z.string().default('')),
   AI_BASE_URL: z.preprocess(

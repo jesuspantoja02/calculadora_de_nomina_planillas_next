@@ -383,6 +383,11 @@
   color: var(--pill-neutral-ink);
 }
 
+.pill--negativo {
+  background: var(--pill-negative-bg);
+  color: var(--pill-negative-ink);
+}
+
 .empty {
   padding: 28px 8px;
   text-align: center;

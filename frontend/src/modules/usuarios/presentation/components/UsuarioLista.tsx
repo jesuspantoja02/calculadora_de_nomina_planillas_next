@@ -11,6 +11,7 @@ interface UsuarioListaProps {
   sesionId: string | null;
   onEditar: (u: UsuarioCuenta) => void;
   onEliminar: (u: UsuarioCuenta) => void;
+  onDesbloquear: (u: UsuarioCuenta) => void;
 }
 
 function formatoFecha(iso: string): string {
@@ -48,7 +49,15 @@ function EstadoLista({ cargando }: { cargando: boolean }) {
   );
 }
 
-export function UsuarioLista({ items, cargando, editandoId, sesionId, onEditar, onEliminar }: UsuarioListaProps) {
+export function UsuarioLista({
+  items,
+  cargando,
+  editandoId,
+  sesionId,
+  onEditar,
+  onEliminar,
+  onDesbloquear,
+}: UsuarioListaProps) {
   const { tema } = useTheme();
 
   if (items.length === 0) {
@@ -72,12 +81,35 @@ export function UsuarioLista({ items, cargando, editandoId, sesionId, onEditar, 
             <div className="flex-grow-1 min-w-0">
               <div className="fw-semibold text-truncate">{u.usuario}</div>
               <small className="text-secondary">Alta {formatoFecha(u.creadoEn)}</small>
+              {u.bloqueada ? (
+                <div>
+                  <small className="text-danger">Bloqueada hasta {formatoFecha(u.bloqueadoHasta ?? '')}</small>
+                </div>
+              ) : null}
+              {u.habilitado === false ? (
+                <div>
+                  <small className="text-danger">Cuenta deshabilitada</small>
+                </div>
+              ) : null}
             </div>
             <div className="text-end">
               <span className={`pill cuenta-rol cuenta-rol--${u.rol}`}>{etiquetaRol(u.rol)}</span>
               {esSesion ? <span className="pill ms-1">Tu sesión</span> : null}
+              {u.bloqueada ? <span className="pill pill--negativo ms-1">Bloqueada</span> : null}
+              {u.habilitado === false ? <span className="pill pill--negativo ms-1">Deshabilitado</span> : null}
             </div>
             <div className="btn-group btn-group-sm">
+              {u.bloqueada ? (
+                <button
+                  type="button"
+                  className="btn btn-outline-success"
+                  aria-label={`Liberar ${u.usuario}`}
+                  title="Liberar bloqueo por intentos fallidos"
+                  onClick={() => onDesbloquear(u)}
+                >
+                  Liberar
+                </button>
+              ) : null}
               <button type="button" className="btn btn-outline-primary" aria-label={`Editar ${u.usuario}`} onClick={() => onEditar(u)}>
                 <Icon nombre="edit" />
               </button>

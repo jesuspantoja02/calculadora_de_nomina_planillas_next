@@ -180,6 +180,43 @@
   flex-wrap: wrap;
 }
 
+.cuenta-habilitado {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+}
+
+.cuenta-habilitado .form-check {
+  margin-bottom: 0;
+  min-height: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cuenta-habilitado .form-check-input {
+  width: 2.25rem;
+  height: 1.15rem;
+  margin-top: 0;
+  cursor: pointer;
+}
+
+.cuenta-habilitado .form-check-label {
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cuenta-habilitado--bloqueado {
+  opacity: 0.78;
+}
+
+.cuenta-habilitado--bloqueado .form-check-input:disabled,
+.cuenta-habilitado--bloqueado .form-check-label {
+  cursor: not-allowed;
+}
+
 .profile-sheet__foto-actions {
   display: flex;
   flex-wrap: wrap;

@@ -13,6 +13,8 @@ interface UsuarioFormProps {
   rolesAsignables: RolUsuario[];
   guardando: boolean;
   soloAlta?: boolean;
+  /** Id de la sesión actual: si editas tu propia cuenta, el switch de habilitar queda bloqueado. */
+  sesionId?: string | null;
   onGuardar: (dto: UsuarioCuentaDto | ActualizarUsuarioDto, esNuevo: boolean) => Promise<unknown>;
   onCancelar: () => void;
   onLimpiarRef?: (fn: () => void) => void;
@@ -40,11 +42,13 @@ export function UsuarioForm({
   rolesAsignables,
   guardando,
   soloAlta = false,
+  sesionId = null,
   onGuardar,
   onCancelar,
   onLimpiarRef,
 }: UsuarioFormProps) {
   const esNuevo = cuenta == null || soloAlta;
+  const esSesionPropia = !esNuevo && cuenta != null && cuenta.id === sesionId;
   const rolInicial = rolesAsignables[0] ?? 'usuario';
 
   const [usuario, setUsuario] = useState('');
@@ -53,6 +57,7 @@ export function UsuarioForm({
   const [cambioPasswordAbierto, setCambioPasswordAbierto] = useState(false);
   const [rol, setRol] = useState<RolUsuario>(rolInicial);
   const [fotoPerfilUrl, setFotoPerfilUrl] = useState('');
+  const [habilitado, setHabilitado] = useState(true);
   const [archivoCrop, setArchivoCrop] = useState<File | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -63,6 +68,7 @@ export function UsuarioForm({
     setCambioPasswordAbierto(false);
     setRol(rolInicial);
     setFotoPerfilUrl('');
+    setHabilitado(true);
     setTouched({});
   }, [rolInicial]);
 
@@ -78,6 +84,7 @@ export function UsuarioForm({
       setCambioPasswordAbierto(false);
       setRol(cuenta.rol);
       setFotoPerfilUrl(cuenta.fotoPerfilUrl ?? '');
+      setHabilitado(cuenta.habilitado !== false);
       setTouched({});
     } else {
       limpiar();
@@ -124,6 +131,7 @@ export function UsuarioForm({
       if (cambioPasswordAbierto && password) dto.password = password;
       if (rol !== cuenta!.rol) dto.rol = rol;
       if (fotoPerfilUrl !== (cuenta!.fotoPerfilUrl ?? '')) dto.fotoPerfilUrl = fotoPerfilUrl;
+      if (!esSesionPropia && habilitado !== (cuenta!.habilitado !== false)) dto.habilitado = habilitado;
       if (Object.keys(dto).length === 0) return;
       await onGuardar(dto, false);
     }
@@ -294,6 +302,33 @@ export function UsuarioForm({
           </FormSelect>
           <small className="text-secondary">{ayudaRol}</small>
         </div>
+
+        {!esNuevo ? (
+          <div className={`mb-4 cuenta-habilitado${esSesionPropia ? ' cuenta-habilitado--bloqueado' : ''}`}>
+            <div className="form-check form-switch">
+              <input
+                id="cuenta-habilitado"
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                checked={habilitado}
+                onChange={(e) => setHabilitado(e.target.checked)}
+                disabled={guardando || esSesionPropia}
+                aria-disabled={esSesionPropia || undefined}
+              />
+              <label className="form-check-label" htmlFor="cuenta-habilitado">
+                {habilitado ? 'Usuario habilitado' : 'Usuario deshabilitado'}
+              </label>
+            </div>
+            <small className="text-secondary d-block mt-1">
+              {esSesionPropia
+                ? 'No puedes deshabilitar tu propia cuenta mientras tienes la sesión abierta.'
+                : habilitado
+                  ? 'Puede iniciar sesión y usar el sistema.'
+                  : 'No podrá iniciar sesión ni usar el sistema hasta que lo habilites de nuevo.'}
+            </small>
+          </div>
+        ) : null}
 
         <div className="d-flex flex-wrap gap-2">
           <button

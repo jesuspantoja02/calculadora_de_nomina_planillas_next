@@ -100,7 +100,7 @@ Las tasas por AFP se editan en Configuración.`,
     id: 'perfil',
     titulo: 'Perfil y foto',
     etiquetas: ['foto', 'perfil', 'avatar', 'contraseña', 'password', 'mi perfil'],
-    texto: `Desde el menú lateral puedes abrir Mi perfil: cambiar foto (recorte circular) y contraseña. Al crear o editar usuarios también se puede asignar foto de perfil.`,
+    texto: `Desde el menú lateral puedes abrir Mi perfil: cambiar foto (recorte circular) y contraseña. Al crear o editar usuarios también se puede asignar foto de perfil. En Usuarios del sistema, al editar una cuenta hay un switch para habilitarla o deshabilitarla (un usuario deshabilitado no puede iniciar sesión). Login: tras 3 intentos fallidos la cuenta se bloquea 5 minutos (o hasta que un admin la libere en Usuarios). Si un administrador olvida su clave, en el login «¿Olvidaste tu clave?» el sistema detecta la cuenta del usuario escrito y, solo si es admin, permite restablecerla con ADMIN_RECOVERY_KEY del servidor (.env).`,
   },
   {
     id: 'config',

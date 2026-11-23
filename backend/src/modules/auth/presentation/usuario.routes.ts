@@ -12,6 +12,7 @@ export function crearUsuarioRouter(servicio: UsuarioGestionService): Router {
   router.get('/roles-asignables', c.rolesAsignables);
   router.post('/', c.crear);
   router.get('/', soloAdmin, c.listar);
+  router.post('/:id/desbloquear', soloAdmin, c.desbloquear);
   router.put('/:id', soloAdmin, c.actualizar);
   router.delete('/:id', soloAdmin, c.eliminar);
   return router;

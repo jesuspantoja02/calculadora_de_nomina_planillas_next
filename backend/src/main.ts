@@ -11,6 +11,7 @@ const app = crearApp({
   servicios: construirServicios(db, {
     authSecret: env.AUTH_SECRET,
     tokenTtlMs: env.AUTH_TOKEN_TTL_HOURS * 60 * 60 * 1000,
+    adminRecoveryKey: env.ADMIN_RECOVERY_KEY,
     aiApiKey: env.AI_API_KEY,
     aiBaseUrl: env.AI_BASE_URL,
     aiModel: env.AI_MODEL,

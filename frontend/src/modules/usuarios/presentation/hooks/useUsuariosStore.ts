@@ -80,6 +80,17 @@ export function useUsuariosStore(esAdministrador: boolean) {
     [run, toast, editando, refrescar],
   );
 
+  const desbloquear = useCallback(
+    async (cuenta: UsuarioCuenta) => {
+      const u = await run(() => usuarios.desbloquear(cuenta.id));
+      if (u) {
+        toast.exito(`Cuenta «${u.usuario}» liberada.`);
+        refrescar();
+      }
+    },
+    [run, toast, refrescar],
+  );
+
   return useMemo(
     () => ({
       items,
@@ -90,7 +101,8 @@ export function useUsuariosStore(esAdministrador: boolean) {
       editar: setEditando,
       guardar,
       eliminar,
+      desbloquear,
     }),
-    [items, rolesAsignables, cargando, guardando, editando, guardar, eliminar],
+    [items, rolesAsignables, cargando, guardando, editando, guardar, eliminar, desbloquear],
   );
 }

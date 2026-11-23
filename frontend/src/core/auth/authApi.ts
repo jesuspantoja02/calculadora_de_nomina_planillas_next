@@ -23,6 +23,42 @@ export async function loginApi(usuario: string, password: string): Promise<Sesio
   return apiPost<SesionApi>('/auth/login', { usuario, password });
 }
 
+export interface CuentaLoginInfo {
+  encontrada: boolean;
+  usuario?: string;
+  rol?: RolUsuario;
+  bloqueada: boolean;
+  bloqueadoHasta: string | null;
+  habilitado: boolean;
+  puedeRecuperarAdmin: boolean;
+}
+
+export async function inspeccionarCuentaApi(usuario: string): Promise<CuentaLoginInfo> {
+  return apiPost<CuentaLoginInfo>('/auth/inspeccionar-cuenta', { usuario });
+}
+
+/** Solo cuentas admin + ADMIN_RECOVERY_KEY del backend. */
+export async function recuperarAdminApi(
+  usuario: string,
+  claveRecuperacion: string,
+  passwordNueva: string,
+): Promise<void> {
+  const res = await fetch(`${environment.apiUrl}/auth/recuperar-admin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usuario, claveRecuperacion, passwordNueva }),
+  });
+  if (!res.ok) {
+    let body: unknown = null;
+    try {
+      body = await res.json();
+    } catch {
+      /* vacío */
+    }
+    throw new ApiError(res.status, mensajeDeError(res.status, body));
+  }
+}
+
 export async function fetchPerfilApi(): Promise<PerfilApi> {
   return apiGet<PerfilApi>('/auth/me');
 }

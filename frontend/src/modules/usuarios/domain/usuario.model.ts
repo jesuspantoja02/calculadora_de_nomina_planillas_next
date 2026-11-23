@@ -6,6 +6,10 @@ export interface UsuarioCuenta {
   rol: RolUsuario;
   fotoPerfilUrl: string;
   creadoEn: string;
+  intentosFallidos: number;
+  bloqueadoHasta: string | null;
+  bloqueada: boolean;
+  habilitado: boolean;
 }
 
 export interface UsuarioCuentaDto {
@@ -20,4 +24,5 @@ export interface ActualizarUsuarioDto {
   password?: string;
   rol?: RolUsuario;
   fotoPerfilUrl?: string;
+  habilitado?: boolean;
 }

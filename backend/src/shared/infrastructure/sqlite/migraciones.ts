@@ -69,4 +69,12 @@ export const MIGRACIONES: readonly string[] = [
   `
   ALTER TABLE usuarios ADD COLUMN foto_perfil_url TEXT NOT NULL DEFAULT '';
   `,
+  `
+  ALTER TABLE usuarios ADD COLUMN intentos_fallidos INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE usuarios ADD COLUMN bloqueado_hasta TEXT;
+  `,
+  `
+  ALTER TABLE usuarios ADD COLUMN habilitado INTEGER NOT NULL DEFAULT 1
+    CHECK (habilitado IN (0, 1));
+  `,
 ];

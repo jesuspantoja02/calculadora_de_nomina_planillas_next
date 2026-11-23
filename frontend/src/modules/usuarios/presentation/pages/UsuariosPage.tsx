@@ -64,6 +64,7 @@ export function UsuariosPage() {
             rolesAsignables={store.rolesAsignables}
             guardando={store.guardando}
             soloAlta={!admin}
+            sesionId={userId}
             onGuardar={onGuardar}
             onCancelar={() => store.editar(null)}
             onLimpiarRef={(fn) => {
@@ -87,6 +88,7 @@ export function UsuariosPage() {
                 sesionId={userId}
                 onEditar={store.editar}
                 onEliminar={onEliminar}
+                onDesbloquear={(u) => void store.desbloquear(u)}
               />
             </div>
           </section>
